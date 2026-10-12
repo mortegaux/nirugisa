@@ -203,9 +203,13 @@ if (config.env === 'production' && !process.env.ENCRYPTION_KEY) {
   console.error('FATAL: ENCRYPTION_KEY is required in production. Set a 64-character hex string.');
   process.exit(1);
 }
-// Same for the seeded admin password: shipping admin/admin is an open door.
-if (config.env === 'production' && config.admin.password === 'admin') {
-  console.error('FATAL: ADMIN_PASSWORD must be changed from the default in production.');
+// If SEED_ADMIN_ON_BOOT=true in production, require a non-default ADMIN_PASSWORD.
+if (
+  config.env === 'production' &&
+  process.env.SEED_ADMIN_ON_BOOT === 'true' &&
+  config.admin.password === 'admin'
+) {
+  console.error('FATAL: ADMIN_PASSWORD must be changed from the default when SEED_ADMIN_ON_BOOT=true.');
   process.exit(1);
 }
 

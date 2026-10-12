@@ -59,13 +59,60 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+    if (
+      error.response?.status === 401 &&
+      !error.config?.url?.includes('/auth/login') &&
+      !window.location.pathname.startsWith('/setup')
+    ) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
+
+// Setup / First-Run Onboarding Wizard API
+export interface SetupCompletePayload {
+  admin: {
+    username: string;
+    password: string;
+    email?: string;
+  };
+  smtp?: {
+    skipped?: boolean;
+    host?: string;
+    port?: number;
+    secure?: boolean;
+    username?: string;
+    pass?: string;
+    fromEmail?: string;
+    fromName?: string;
+    enabled?: boolean;
+  };
+  library: {
+    mode: 'shared' | 'private';
+    sharedRecipes?: boolean;
+    showRecipeAuthor?: boolean;
+    sharedCollections?: boolean;
+    sharedMealPlans?: boolean;
+    sharedShoppingLists?: boolean;
+    sharedPantry?: boolean;
+    sharedBatchCooking?: boolean;
+  };
+  ai: {
+    enabled: boolean;
+    geminiApiKey?: string;
+    imageProvider?: 'google' | 'none';
+    imageModel?: string;
+    imageApiKey?: string;
+  };
+}
+
+export const setupApi = {
+  getStatus: () => api.get<{ needsSetup: boolean }>('/setup/status'),
+  complete: (data: SetupCompletePayload) =>
+    api.post<{ message: string; user: User; token: string; accessToken: string }>('/setup/complete', data),
+};
 
 // Auth API
 export const authApi = {

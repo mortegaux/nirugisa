@@ -26,12 +26,17 @@ import CollectionsPage from '@/features/collections/CollectionsPage';
 import CollectionDetailPage from '@/features/collections/CollectionDetailPage';
 import NotFoundPage from '@/features/errors/NotFoundPage';
 import FeedbackInboxPage from '@/features/feedback/FeedbackInboxPage';
+import SetupWizardPage from '@/features/setup/SetupWizardPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuthStore();
+  const { user, isLoading, needsSetup } = useAuthStore();
 
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (needsSetup) {
+    return <Navigate to="/setup" replace />;
   }
 
   if (!user) {
@@ -41,11 +46,29 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuthStore();
+function PublicAuthRoute({ children }: { children: React.ReactNode }) {
+  const { isLoading, needsSetup } = useAuthStore();
 
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (needsSetup) {
+    return <Navigate to="/setup" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, needsSetup } = useAuthStore();
+
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (needsSetup) {
+    return <Navigate to="/setup" replace />;
   }
 
   if (!user || user.role !== 'admin') {
@@ -65,8 +88,23 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/setup" element={<SetupWizardPage />} />
+        <Route
+          path="/login"
+          element={
+            <PublicAuthRoute>
+              <LoginPage />
+            </PublicAuthRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicAuthRoute>
+              <RegisterPage />
+            </PublicAuthRoute>
+          }
+        />
 
         <Route
           path="/"

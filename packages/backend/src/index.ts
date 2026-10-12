@@ -51,8 +51,13 @@ async function bootstrap() {
   await SystemSettingsService.initialize();
   console.log('✓ System settings initialized');
 
-  // Initialize admin account
-  await AdminInitService.initializeAdminAccount();
+  // Only seed admin on boot if SEED_ADMIN_ON_BOOT=true; otherwise fresh installs
+  // use the browser Onboarding Wizard at /setup.
+  if (process.env.SEED_ADMIN_ON_BOOT === 'true') {
+    await AdminInitService.initializeAdminAccount();
+  } else {
+    console.log('✓ Onboarding wizard enabled for first-run admin setup (/setup)');
+  }
 
   // Seed per-user taxonomy data (idempotent; covers existing users at every startup)
   const taxonomyService = new TaxonomyService();

@@ -16,9 +16,11 @@ import gamificationRoutes from './gamification.routes';
 import taxonomyRoutes from './taxonomy.routes';
 import collectionRoutes from './collection.routes';
 import feedbackRoutes from './feedback.routes';
+import setupRoutes from './setup.routes';
 
 const router = Router();
 
+router.use('/setup', setupRoutes);
 router.use('/auth', authRoutes);
 router.use('/recipes', recipeRoutes);
 router.use('/ai', aiRoutes);
