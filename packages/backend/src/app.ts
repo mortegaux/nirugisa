@@ -76,6 +76,20 @@ export function createApp(): express.Express {
   // API routes
   app.use('/api', routes);
 
+  // Serve the frontend SPA (single-container build: frontend dist is copied
+  // to ./public next to the backend dist). Must come after /api routes.
+  const frontendDir = path.join(__dirname, '..', 'public');
+  if (fs.existsSync(frontendDir)) {
+    app.use(express.static(frontendDir));
+    // SPA fallback: non-API, non-upload routes serve index.html
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+        return next();
+      }
+      res.sendFile(path.join(frontendDir, 'index.html'));
+    });
+  }
+
   // Error handler (must be last)
   app.use(errorHandler);
 

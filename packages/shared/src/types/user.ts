@@ -10,7 +10,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   profilePhotoUrl?: string;
-  passwordHash?: string;
+  // Note: passwords are managed by Better Auth, never exposed here.
   role: UserRole;
   isSystemAdmin?: boolean;
   createdAt: Date;

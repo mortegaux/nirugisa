@@ -80,8 +80,8 @@ export class ImageStorageService {
         CREATE TABLE IF NOT EXISTS "stored_images" (
           "file_path" varchar(255) PRIMARY KEY,
           "mime_type" varchar(100) NOT NULL,
-          "data" bytea NOT NULL,
-          "created_at" TIMESTAMP NOT NULL DEFAULT now()
+          "data" blob NOT NULL,
+          "created_at" datetime NOT NULL DEFAULT (datetime('now'))
         )
       `);
 
