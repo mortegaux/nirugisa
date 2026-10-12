@@ -21,7 +21,7 @@ async function createTestUser(id: string): Promise<void> {
       email: `route-test-${id.slice(0, 8)}@test.com`,
       username: `route-user-${id.slice(0, 8)}`,
       role: UserRole.USER,
-      passwordHash: 'hashed',
+
     })
     .orIgnore()
     .execute();

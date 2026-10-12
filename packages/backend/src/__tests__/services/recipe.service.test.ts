@@ -20,7 +20,7 @@ async function createTestUser(id: string): Promise<User> {
       email: `${id}@test.com`,
       username: `user-${id.slice(0, 8)}`,
       role: UserRole.USER,
-      passwordHash: 'hashed',
+
     })
     .orIgnore()
     .execute();

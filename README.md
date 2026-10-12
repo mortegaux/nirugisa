@@ -26,8 +26,8 @@ A self-hosted recipe management system with optional AI features powered by mult
 **Backend:**
 - Node.js + TypeScript
 - Express.js
-- TypeORM + PostgreSQL
-- JWT Authentication
+- TypeORM + SQLite (better-sqlite3)
+- Better Auth (vetted auth library — sessions, password hashing, admin)
 - Multiple AI SDK integrations
 
 **Frontend:**
@@ -38,16 +38,15 @@ A self-hosted recipe management system with optional AI features powered by mult
 - Tailwind CSS
 
 **DevOps:**
-- Docker + Docker Compose
+- Docker + Docker Compose (single container)
 - npm workspaces (monorepo)
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm 9+
+- Node.js 20+ and npm 9+
 - Docker and Docker Compose (for containerized deployment)
-- PostgreSQL (if running locally without Docker)
 
 ### Development Setup
 
@@ -68,46 +67,34 @@ A self-hosted recipe management system with optional AI features powered by mult
    # Edit packages/backend/.env with your configuration
    ```
 
-4. **Start PostgreSQL:**
-   ```bash
-   docker-compose up -d postgres
-   ```
-
-5. **Run database migrations:**
-   ```bash
-   npm run migration:run -w packages/backend
-   ```
-
-6. **Start the backend:**
+4. **Start the backend** (SQLite DB is created automatically on first run):
    ```bash
    npm run dev:backend
    ```
 
-7. **Start the frontend** (in a new terminal):
+5. **Start the frontend** (in a new terminal):
    ```bash
    npm run dev:frontend
    ```
 
-8. **Access the application:**
+6. **Access the application:**
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3001
 
-### Docker Deployment
+### Docker Deployment (single container)
 
-See the [`release/`](release/) folder for a self-contained Docker deployment package with full instructions.
-
-Quick start:
 ```bash
 cp .env.example .env
-# Edit .env — set POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_KEY, ADMIN_PASSWORD
+# Edit .env — set BETTER_AUTH_SECRET, ENCRYPTION_KEY, ADMIN_PASSWORD
 docker compose up -d
 ```
 
-Secrets are never committed — `docker-compose.yml` reads them from a gitignored `.env` file.
-For the self-contained package: `cp release/.env.example release/.env` and run compose in `release/`.
+One container, one volume (`/data` holds the SQLite database + uploads), one port.
 
-- Frontend: http://localhost:8765
-- Backend API: http://localhost:8766
+- App: http://localhost:8765 (API at `/api`)
+
+Secrets are never committed — `docker-compose.yml` reads them from a gitignored `.env` file
+(or from Portainer stack environment variables).
 
 ## AI Configuration
 
@@ -198,30 +185,39 @@ The backend API is available at `http://localhost:3001/api` with the following e
 See `packages/backend/.env.example` for all available configuration options.
 
 Key variables:
-- `JWT_SECRET`: Secret key for JWT tokens
+- `BETTER_AUTH_SECRET`: Secret for Better Auth session signing (min 32 chars; `JWT_SECRET` accepted as legacy alias)
 - `ENCRYPTION_KEY`: 32-byte hex key for AES-256-GCM encryption of stored AI API keys and SMTP credentials at rest
-- `DATABASE_*`: PostgreSQL connection details
+- `DB_PATH`: SQLite database file path (default: `/data/nommable.db` in Docker, `./nommable.db` locally)
+- `ADMIN_USERNAME` / `ADMIN_PASSWORD`: Initial admin account (created on first run)
 - `SMTP_*`: Optional fallback SMTP host, port, user, pass, and from address for sending invitation emails (can also be configured directly in Admin Settings → Email / SMTP)
 - `OPENAI_API_KEY`: OpenAI API key (optional)
 - `ANTHROPIC_API_KEY`: Anthropic API key (optional)
 - `GOOGLE_AI_API_KEY`: Google AI API key (optional)
 - `OLLAMA_BASE_URL`: Ollama server URL (optional)
 
+## Data Persistence
+
+All persistent data lives on the `/data` volume:
+- `/data/nommable.db` — SQLite database (WAL mode)
+- `/data/uploads` — uploaded images and files
+
+Back up the volume to back up everything.
+
 ## Security
 
 Nommable is built for self-hosting with defense-in-depth:
 
-- **Authentication**: JWT-based auth with bcrypt password hashing; protected API routes.
+- **Authentication**: Better Auth (vetted library, MIT) — scrypt password hashing, stateful sessions, admin plugin; no hand-rolled crypto. The SPA authenticates with `Authorization: Bearer` session tokens.
 - **Flexible recipe sharing & per-user ownership**: Personal data (meal plans, shopping lists, pantry items, analytics, batch cooks, and meal-plan templates) is strictly scoped to the authenticated `userId`, while recipes support either a shared household catalog (with optional creator attribution) or strict per-user private isolation.
 - **Admin-gated operations**: System settings, SMTP configuration, user management, and destructive actions require an admin role.
 - **Input validation**: All request bodies and query params are validated and coerced with Zod.
 - **Encrypted secrets**: AI provider API keys and SMTP passwords are encrypted at rest (AES-256-GCM) via the `ENCRYPTION_KEY` env var.
-- **Secret hygiene**: `docker-compose.yml` contains no hardcoded secrets (all via gitignored `.env`); the backend refuses to boot in production with a missing `ENCRYPTION_KEY` or default `JWT_SECRET` / `ADMIN_PASSWORD` values.
+- **Secret hygiene**: `docker-compose.yml` contains no hardcoded secrets (all via gitignored `.env`); the backend refuses to boot in production with a missing `ENCRYPTION_KEY` or default `BETTER_AUTH_SECRET` / `ADMIN_PASSWORD` values.
 - **Rate limiting**: Tiered limits (global, auth, and AI endpoints).
-- **Safe defaults**: TypeORM `synchronize` is disabled outside development, CORS defaults are locked to known origins, and recipe imports use `execFile` (no shell interpolation).
-- **Uploads**: File extensions are derived from validated MIME types rather than user-supplied filenames; uploaded and AI-generated images are backed up in PostgreSQL for container resilience.
+- **Safe defaults**: TypeORM `synchronize` is disabled (migrations only), CORS defaults are locked to known origins, and recipe imports use `execFile` (no shell interpolation).
+- **Uploads**: File extensions are derived from validated MIME types rather than user-supplied filenames.
 
-Set a strong `JWT_SECRET` and `ENCRYPTION_KEY`, and a restrictive `CORS_ORIGIN`, before deploying to production.
+Set a strong `BETTER_AUTH_SECRET` and `ENCRYPTION_KEY`, and a restrictive `CORS_ORIGIN`, before deploying to production.
 
 ## Contributing
 
