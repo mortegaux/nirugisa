@@ -54,14 +54,25 @@ RUN apk add --no-cache \
     jpeg \
     pango \
     giflib \
-    pixman
+    pixman && \
+    ln -sf /usr/bin/python3 /usr/bin/python
 
 COPY package*.json ./
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/backend/package*.json ./packages/backend/
 
-# Prod-only node_modules (workspace-aware)
-RUN npm install --omit=dev --workspaces --include-workspace-root 2>/dev/null || npm install --omit=dev
+# Prod-only node_modules (workspace-aware; temporary build-deps for native addons like canvas/better-sqlite3)
+RUN apk add --no-cache --virtual .build-deps \
+    make \
+    g++ \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    pixman-dev \
+    pkgconf && \
+    (npm install --omit=dev --workspaces --include-workspace-root 2>/dev/null || npm install --omit=dev) && \
+    apk del .build-deps
 
 # Built artifacts
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
@@ -71,8 +82,9 @@ COPY --from=builder /app/packages/frontend/dist ./packages/backend/public
 
 # Python scraper (optional recipe import)
 COPY packages/backend/requirements.txt ./packages/backend/
-COPY packages/backend/src/services/scraper/recipe_scraper.py ./packages/backend/dist/services/scraper/ 2>/dev/null || true
+COPY packages/backend/src/services/scraper/recipe_scraper.py ./packages/backend/dist/services/scraper/recipe_scraper.py
 RUN pip3 install --break-system-packages --no-cache-dir -r ./packages/backend/requirements.txt || true
+
 
 # Persistent data: SQLite DB + uploads live here
 VOLUME /data
