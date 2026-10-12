@@ -1,11 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcrypt';
-import jwt, { SignOptions } from 'jsonwebtoken';
 import { AppDataSource } from '../../db/data-source';
 import { User } from '../../db/entities';
 import { AppError } from '../middleware';
-import { config } from '../../config';
+import { toAuthHeaders } from '../middleware/auth';
+import { auth, getAuthDb, ensureAppUser } from '../../lib/auth';
 import { InvitationService } from '../../services/invitation/invitation.service';
+import { TaxonomyService } from '../../services/taxonomy/taxonomy.service';
+import { UserRole } from '@nommable/shared';
+
+function toUserJson(user: User) {
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    profilePhotoUrl: user.profilePhotoUrl,
+    role: user.role,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
 
 export class AuthController {
   static async registerWithInvitation(req: Request, res: Response, next: NextFunction) {
@@ -19,51 +34,52 @@ export class AuthController {
         throw new AppError(400, 'Invalid or expired invitation');
       }
 
-      const userRepo = AppDataSource.getRepository(User);
+      // Check if username is taken (Better Auth user table)
+      const authDb = getAuthDb();
+      const existingAuth = authDb
+        .prepare('SELECT id FROM "user" WHERE username = ? OR email = ?')
+        .get(username, invitation.email) as { id: string } | undefined;
 
-      // Check if username is taken
-      const existing = await userRepo.findOne({ where: { username } });
-
-      if (existing) {
-        throw new AppError(409, 'Username already taken');
+      if (existingAuth) {
+        throw new AppError(409, 'Username or email already taken');
       }
 
-      // Hash password
-      const passwordHash = await bcrypt.hash(password, 10);
-
-      // Create user with role from invitation
-      const user = userRepo.create({
-        email: invitation.email,
-        username,
-        passwordHash,
-        role: invitation.role,
+      // Create the credential via Better Auth.
+      const signUp = await auth.api.signUpEmail({
+        body: {
+          email: invitation.email,
+          password,
+          name: username,
+          username,
+        },
+        headers: toAuthHeaders(req),
       });
 
-      await userRepo.save(user);
+      // Create the matching app-side user row with the invitation's role.
+      const appUser = await ensureAppUser(signUp.user.id, {
+        email: invitation.email,
+        username,
+        role: invitation.role,
+      });
+      authDb
+        .prepare('UPDATE "user" SET role = ? WHERE id = ?')
+        .run(invitation.role, signUp.user.id);
 
       // Mark invitation as accepted
       await InvitationService.acceptInvitation(token);
 
-      // Generate token
-      const signOptions: SignOptions = {
-        expiresIn: config.jwt.expiresIn as jwt.SignOptions['expiresIn'],
-        algorithm: 'HS256',
-      };
-      const jwtToken = jwt.sign({ userId: user.id, role: user.role }, config.jwt.secret, signOptions);
+      // Give the new user their own taxonomy set
+      await new TaxonomyService().seedForUser(signUp.user.id);
+
+      // Sign the new user in to return a session token (matches old API shape)
+      const signIn = await auth.api.signInUsername({
+        body: { username, password },
+        headers: toAuthHeaders(req),
+      });
 
       res.status(201).json({
-        token: jwtToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profilePhotoUrl: user.profilePhotoUrl,
-          role: user.role,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
+        token: signIn.token,
+        user: toUserJson(appUser),
       });
     } catch (error) {
       next(error);
@@ -74,45 +90,50 @@ export class AuthController {
     try {
       const { username, password } = req.body;
 
-      const userRepo = AppDataSource.getRepository(User);
-
-      // Find user by username or email
-      const user = await userRepo.findOne({
-        where: [{ username }, { email: username }],
+      // Better Auth verifies the password (scrypt) and mints a session.
+      // The bearer plugin returns the session token for the SPA's
+      // `Authorization: Bearer` pattern.
+      const signIn = await auth.api.signInUsername({
+        body: { username, password },
+        headers: toAuthHeaders(req),
       });
 
-      if (!user) {
+      if (!signIn?.token || !signIn?.user) {
         throw new AppError(401, 'Invalid credentials');
       }
 
-      // Check password
-      const valid = await bcrypt.compare(password, user.passwordHash);
+      const userRepo = AppDataSource.getRepository(User);
+      const appUser = await userRepo.findOne({
+        where: { id: signIn.user.id },
+      });
 
-      if (!valid) {
+      if (!appUser) {
         throw new AppError(401, 'Invalid credentials');
       }
 
-      // Generate token
-      const signOptions: SignOptions = {
-        expiresIn: config.jwt.expiresIn as jwt.SignOptions['expiresIn'],
-        algorithm: 'HS256',
-      };
-      const token = jwt.sign({ userId: user.id, role: user.role }, config.jwt.secret, signOptions);
+      // Forward any Set-Cookie headers (defense in depth; SPA uses bearer)
+      const setCookie = (signIn as { headers?: Headers }).headers?.getSetCookie?.();
+      if (setCookie?.length) {
+        res.setHeader('set-cookie', setCookie);
+      }
 
       res.json({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profilePhotoUrl: user.profilePhotoUrl,
-          role: user.role,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
+        token: signIn.token,
+        user: toUserJson(appUser),
       });
+    } catch (error) {
+      // Better Auth throws on bad credentials — normalize to 401
+      if ((error as Error)?.message?.toLowerCase().includes('invalid')) {
+        return next(new AppError(401, 'Invalid credentials'));
+      }
+      next(error);
+    }
+  }
+
+  static async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      await auth.api.signOut({ headers: toAuthHeaders(req) });
+      res.json({ message: 'Logged out successfully' });
     } catch (error) {
       next(error);
     }
@@ -129,17 +150,7 @@ export class AuthController {
         throw new AppError(404, 'User not found');
       }
 
-      res.json({
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profilePhotoUrl: user.profilePhotoUrl,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      });
+      res.json(toUserJson(user));
     } catch (error) {
       next(error);
     }

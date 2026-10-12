@@ -10,7 +10,7 @@ function getKey(): Buffer {
   if (keyHex && /^[0-9a-fA-F]{64}$/.test(keyHex)) {
     return Buffer.from(keyHex, 'hex');
   }
-  const fallback = config.jwt?.secret || process.env.JWT_SECRET || 'nommable-default-secret-key';
+  const fallback = config.auth?.secret || process.env.BETTER_AUTH_SECRET || process.env.JWT_SECRET || 'nommable-default-secret-key';
   return crypto.createHash('sha256').update(fallback).digest();
 }
 

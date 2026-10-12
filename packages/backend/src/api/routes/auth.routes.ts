@@ -30,6 +30,7 @@ const registerWithInviteSchema = z.object({
 
 router.post('/register/invite', validateBody(registerWithInviteSchema), AuthController.registerWithInvitation);
 router.post('/login', validateBody(loginSchema), AuthController.login);
+router.post('/logout', AuthController.logout);
 router.get('/me', authMiddleware, AuthController.me);
 
 export default router;

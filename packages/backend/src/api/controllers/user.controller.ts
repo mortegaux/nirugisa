@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../../services/user/user.service';
 import { AppError, AuthRequest } from '../middleware';
-import bcrypt from 'bcrypt';
+import { verifyPassword } from 'better-auth/crypto';
 import { AppDataSource } from '../../db/data-source';
 import { User } from '../../db/entities';
 import { ImageStorageService } from '../../services/image-storage.service';
+import { auth, getAuthDb } from '../../lib/auth';
+import { toAuthHeaders } from '../middleware/auth';
 
 export class UserController {
   /**
@@ -205,16 +207,20 @@ export class UserController {
         throw new AppError(404, 'User not found');
       }
 
-      // Verify current password
-      const valid = await bcrypt.compare(currentPassword, user.passwordHash);
-      if (!valid) {
+      // Change password via Better Auth (verifies current password, re-hashes
+      // with scrypt, revokes other sessions)
+      try {
+        await auth.api.changePassword({
+          body: {
+            currentPassword,
+            newPassword,
+            revokeOtherSessions: true,
+          },
+          headers: toAuthHeaders(req),
+        });
+      } catch (err) {
         throw new AppError(401, 'Current password is incorrect');
       }
-
-      // Hash new password
-      const passwordHash = await bcrypt.hash(newPassword, 10);
-      user.passwordHash = passwordHash;
-      await userRepo.save(user);
 
       res.json({ message: 'Password updated successfully' });
     } catch (error) {
@@ -241,8 +247,16 @@ export class UserController {
         throw new AppError(404, 'User not found');
       }
 
-      // Verify password for security
-      const valid = await bcrypt.compare(password, user.passwordHash);
+      // Verify password for security (against Better Auth's credential)
+      const authDb = getAuthDb();
+      const account = authDb
+        .prepare(
+          'SELECT password FROM account WHERE userId = ? AND providerId = ?'
+        )
+        .get(userId, 'credential') as { password: string } | undefined;
+      const valid =
+        account?.password &&
+        (await verifyPassword({ hash: account.password, password }));
       if (!valid) {
         throw new AppError(401, 'Password is incorrect');
       }
@@ -253,8 +267,10 @@ export class UserController {
         throw new AppError(409, 'Email already in use');
       }
 
+      // Update email on both sides
       user.email = email;
       await userRepo.save(user);
+      authDb.prepare('UPDATE "user" SET email = ? WHERE id = ?').run(email, userId);
 
       res.json({
         user: {
