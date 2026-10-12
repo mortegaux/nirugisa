@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nirugisa-postgres
+    environment:
+      POSTGRES_DB: nirugisa
+      POSTGRES_USER: nirugisa
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-nirugisa_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nirugisa']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nirugisa-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+      args:
+        - NODE_OPTIONS=--max-old-space-size=2048
+    container_name: nirugisa-backend
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=2048
+      HOST: 0.0.0.0
+      PORT: 3001
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: nirugisa
+      DATABASE_USER: nirugisa
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-nirugisa_password}
+      DB_SYNCHRONIZE: 'false'
+      JWT_SECRET: ${JWT_SECRET:-7K9mP2nR5vX8wA1bC4dE6fG9hJ0kL3mN6oP9qR2sT5uV8wX1yZ4aB7cD0eF3gH6i}
+      JWT_EXPIRES_IN: 7d
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8765}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-c3df3df4ebbf19c45090b919603f2494aebb8cc870492c1bb8a42934b4c7d1be}
+      UPLOAD_DIR: /app/uploads
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@nirugisa.local}
+    ports:
+      - '${BACKEND_PORT:-8766}:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+      - uploads:/app/packages/backend/uploads
+    networks:
+      - nirugisa-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+      args:
+        - NODE_OPTIONS=--max-old-space-size=2048
+    container_name: nirugisa-frontend
+    ports:
+      - '${FRONTEND_PORT:-8765}:80'
+    depends_on:
+      - backend
+    networks:
+      - nirugisa-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  uploads:
+
+networks:
+  nirugisa-network:
+    driver: bridge
