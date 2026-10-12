@@ -1,0 +1,86 @@
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/auth.store';
+
+// Features
+import LoginPage from '@/features/auth/LoginPage';
+import RegisterPage from '@/features/auth/RegisterPage';
+import DashboardLayout from '@/features/layout/DashboardLayout';
+import RecipesPage from '@/features/recipes/RecipesPage';
+import RecipeDetailPage from '@/features/recipes/RecipeDetailPage';
+import RecipeForm from '@/features/recipes/RecipeForm';
+import RecipeEditPage from '@/features/recipes/RecipeEditPage';
+import MealPlansPage from '@/features/meal-plans/MealPlansPage';
+import MealPlanBuilder from '@/features/meal-plans/MealPlanBuilder';
+import MealPlanDashboard from '@/features/meal-plans/MealPlanDashboard';
+import ShoppingListsPage from '@/features/shopping-lists/ShoppingListsPage';
+import SettingsPage from '@/features/settings/SettingsPage';
+import TaxonomyManagement from '@/features/settings/TaxonomyManagement';
+import PantryPage from '@/features/pantry/PantryPage';
+import AnalyticsPage from '@/features/analytics/AnalyticsPage';
+import BatchCookingPage from '@/features/batch-cooking/BatchCookingPage';
+import GamificationPage from '@/features/gamification/GamificationPage';
+import NotFoundPage from '@/features/errors/NotFoundPage';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuthStore();
+
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function App() {
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/recipes" replace />} />
+          <Route path="recipes" element={<RecipesPage />} />
+          <Route path="recipes/new" element={<RecipeForm />} />
+          <Route path="recipes/:id/edit" element={<RecipeEditPage />} />
+          <Route path="recipes/:id" element={<RecipeDetailPage />} />
+          <Route path="meal-plans" element={<MealPlansPage />} />
+          <Route path="meal-plans/new" element={<MealPlanBuilder />} />
+          <Route path="meal-plans/:id" element={<MealPlanDashboard />} />
+          <Route path="shopping-lists" element={<ShoppingListsPage />} />
+          <Route path="pantry" element={<PantryPage />} />
+          <Route path="batch-cooking" element={<BatchCookingPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="achievements" element={<GamificationPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/taxonomies" element={<TaxonomyManagement />} />
+          {/* 404 - Must be last */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* 404 for unauthenticated routes */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;

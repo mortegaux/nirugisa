@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { UserRole } from '@nirugisa/shared';
+import { UserRole } from '@nommable/shared';
 import { AuthRequest } from './auth';
 
 export const requireRole = (roles: UserRole[]) => {

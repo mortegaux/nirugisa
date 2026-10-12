@@ -13,7 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@nirugisa/shared': path.resolve(__dirname, '../shared/src/index'),
+      '@nommable/shared': path.resolve(__dirname, '../shared/src/index'),
     },
   },
 });

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Nirugisa - Build and Push Images Script
+# Nommable - Build and Push Images Script
 # This script builds Docker images locally and pushes them to a container registry
 
 set -e  # Exit on error
@@ -11,7 +11,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}=== Nirugisa Image Build and Push Script ===${NC}\n"
+echo -e "${GREEN}=== Nommable Image Build and Push Script ===${NC}\n"
 
 # Check if registry is provided
 if [ -z "$1" ]; then
@@ -38,17 +38,17 @@ docker-compose -f docker-compose.portainer.yml build --no-cache
 
 # Tag images
 echo -e "\n${GREEN}Step 2: Tagging images...${NC}"
-docker tag nirugisa-backend:latest $REGISTRY/nirugisa-backend:$VERSION
-docker tag nirugisa-frontend:latest $REGISTRY/nirugisa-frontend:$VERSION
+docker tag nommable-backend:latest $REGISTRY/nommable-backend:$VERSION
+docker tag nommable-frontend:latest $REGISTRY/nommable-frontend:$VERSION
 
 if [ "$VERSION" != "latest" ]; then
-    docker tag nirugisa-backend:latest $REGISTRY/nirugisa-backend:latest
-    docker tag nirugisa-frontend:latest $REGISTRY/nirugisa-frontend:latest
+    docker tag nommable-backend:latest $REGISTRY/nommable-backend:latest
+    docker tag nommable-frontend:latest $REGISTRY/nommable-frontend:latest
 fi
 
 # List images
 echo -e "\n${GREEN}Built images:${NC}"
-docker images | grep -E "(nirugisa|REPOSITORY)"
+docker images | grep -E "(nommable|REPOSITORY)"
 
 # Push images
 echo -e "\n${GREEN}Step 3: Pushing images to registry...${NC}"
@@ -57,21 +57,21 @@ read -p "Continue with push? (y/n) " -n 1 -r
 echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    docker push $REGISTRY/nirugisa-backend:$VERSION
-    docker push $REGISTRY/nirugisa-frontend:$VERSION
+    docker push $REGISTRY/nommable-backend:$VERSION
+    docker push $REGISTRY/nommable-frontend:$VERSION
 
     if [ "$VERSION" != "latest" ]; then
-        docker push $REGISTRY/nirugisa-backend:latest
-        docker push $REGISTRY/nirugisa-frontend:latest
+        docker push $REGISTRY/nommable-backend:latest
+        docker push $REGISTRY/nommable-frontend:latest
     fi
 
     echo -e "\n${GREEN}✓ Images successfully pushed!${NC}"
     echo ""
     echo "Use these images in your docker-compose.yml:"
     echo "  backend:"
-    echo "    image: $REGISTRY/nirugisa-backend:$VERSION"
+    echo "    image: $REGISTRY/nommable-backend:$VERSION"
     echo "  frontend:"
-    echo "    image: $REGISTRY/nirugisa-frontend:$VERSION"
+    echo "    image: $REGISTRY/nommable-frontend:$VERSION"
 else
     echo -e "\n${YELLOW}Push cancelled${NC}"
 fi

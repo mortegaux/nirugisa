@@ -1,20 +1,20 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: nirugisa-postgres
+    container_name: nommable-postgres
     environment:
-      POSTGRES_DB: nirugisa
-      POSTGRES_USER: nirugisa
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-nirugisa_password}
+      POSTGRES_DB: nommable
+      POSTGRES_USER: nommable
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-nommable_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U nirugisa']
+      test: ['CMD-SHELL', 'pg_isready -U nommable']
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - nirugisa-network
+      - nommable-network
 
   backend:
     build:
@@ -22,7 +22,7 @@ services:
       dockerfile: packages/backend/Dockerfile
       args:
         - NODE_OPTIONS=--max-old-space-size=2048
-    container_name: nirugisa-backend
+    container_name: nommable-backend
     environment:
       NODE_ENV: production
       NODE_OPTIONS: --max-old-space-size=2048
@@ -30,9 +30,9 @@ services:
       PORT: 3001
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: nirugisa
-      DATABASE_USER: nirugisa
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-nirugisa_password}
+      DATABASE_NAME: nommable
+      DATABASE_USER: nommable
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-nommable_password}
       DB_SYNCHRONIZE: 'false'
       JWT_SECRET: ${JWT_SECRET:-7K9mP2nR5vX8wA1bC4dE6fG9hJ0kL3mN6oP9qR2sT5uV8wX1yZ4aB7cD0eF3gH6i}
       JWT_EXPIRES_IN: 7d
@@ -46,7 +46,7 @@ services:
       SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-no-reply@nirugisa.local}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@nommable.local}
     ports:
       - '${BACKEND_PORT:-8766}:3001'
     depends_on:
@@ -56,7 +56,7 @@ services:
       - uploads:/app/uploads
       - uploads:/app/packages/backend/uploads
     networks:
-      - nirugisa-network
+      - nommable-network
     restart: unless-stopped
 
   frontend:
@@ -65,13 +65,13 @@ services:
       dockerfile: packages/frontend/Dockerfile
       args:
         - NODE_OPTIONS=--max-old-space-size=2048
-    container_name: nirugisa-frontend
+    container_name: nommable-frontend
     ports:
       - '${FRONTEND_PORT:-8765}:80'
     depends_on:
       - backend
     networks:
-      - nirugisa-network
+      - nommable-network
     restart: unless-stopped
 
 volumes:
@@ -79,5 +79,5 @@ volumes:
   uploads:
 
 networks:
-  nirugisa-network:
+  nommable-network:
     driver: bridge

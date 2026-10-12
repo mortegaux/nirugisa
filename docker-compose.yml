@@ -1,7 +1,7 @@
-# Nirugisa — Docker Compose
+# Nommable — Docker Compose
 #
 # Secrets are NOT stored here. Set them as stack environment variables in
-# Portainer (Stacks -> nirugisa -> Environment variables), or copy
+# Portainer (Stacks -> nommable -> Environment variables), or copy
 # `.env.example` to `.env` and fill in real values before running:
 #
 #   cp .env.example .env
@@ -13,17 +13,17 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: nirugisa-postgres
+    container_name: nommable-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-nirugisa}
-      POSTGRES_USER: ${POSTGRES_USER:-nirugisa}
+      POSTGRES_DB: ${POSTGRES_DB:-nommable}
+      POSTGRES_USER: ${POSTGRES_USER:-nommable}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-nirugisa}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-nommable}']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -32,15 +32,15 @@ services:
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
-    container_name: nirugisa-backend
+    container_name: nommable-backend
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 3001
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: ${POSTGRES_DB:-nirugisa}
-      DATABASE_USER: ${POSTGRES_USER:-nirugisa}
+      DATABASE_NAME: ${POSTGRES_DB:-nommable}
+      DATABASE_USER: ${POSTGRES_USER:-nommable}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       # Schema is built/upgraded by migrations on startup (see migrationsRun).
       # Set 'true' only to auto-sync the schema from entities during development.
@@ -57,7 +57,7 @@ services:
       SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-no-reply@nirugisa.local}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@nommable.local}
     ports:
       - '8766:3001'
     depends_on:
@@ -71,7 +71,7 @@ services:
     build:
       context: .
       dockerfile: packages/frontend/Dockerfile
-    container_name: nirugisa-frontend
+    container_name: nommable-frontend
     ports:
       - '8765:80'
     depends_on:

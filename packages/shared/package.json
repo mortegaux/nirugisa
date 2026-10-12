@@ -1,7 +1,7 @@
 {
-  "name": "@nirugisa/shared",
+  "name": "@nommable/shared",
   "version": "1.0.0",
-  "description": "Shared types and utilities for Nirugisa",
+  "description": "Shared types and utilities for Nommable",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
