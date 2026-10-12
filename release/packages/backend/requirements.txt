@@ -1,2 +1,0 @@
-# Python dependencies for recipe scraping
-recipe-scrapers>=15.0.0
