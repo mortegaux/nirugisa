@@ -8,7 +8,7 @@ interface AuthState {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   registerWithInvite: (token: string, username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   setUser: (user: User) => void;
 }
@@ -32,7 +32,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user, token: authToken });
   },
 
-  logout: () => {
+  logout: async () => {
+    const token = localStorage.getItem('token');
+    // Tell the backend to revoke the session (best effort)
+    if (token) {
+      try {
+        await authApi.logout();
+      } catch {
+        // Session may already be invalid — still clear local state
+      }
+    }
     localStorage.removeItem('token');
     set({ user: null, token: null });
   },

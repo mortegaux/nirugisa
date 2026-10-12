@@ -1,46 +1,38 @@
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: nommable-postgres
-    environment:
-      POSTGRES_DB: nommable
-      POSTGRES_USER: nommable
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-nommable_password}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U nommable']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - nommable-network
+# Nommable — Docker Compose (single container)
+#
+# One container, one volume (/data), one port. The backend serves the API
+# and the frontend SPA. SQLite database lives at /data/nommable.db.
+#
+# Secrets are NOT stored here. Set them as stack environment variables in
+# Portainer (Stacks -> nommable -> Environment variables), or copy
+# `.env.example` to `.env` and fill in real values before running:
+#
+#   cp .env.example .env
+#   docker compose up -d
+#
+# The `:?` syntax below makes compose fail fast with a clear message if a
+# required secret is missing.
 
-  backend:
+services:
+  nommable:
     build:
       context: .
-      dockerfile: packages/backend/Dockerfile
-      args:
-        - NODE_OPTIONS=--max-old-space-size=2048
-    container_name: nommable-backend
+      dockerfile: Dockerfile
+    container_name: nommable
     environment:
       NODE_ENV: production
-      NODE_OPTIONS: --max-old-space-size=2048
       HOST: 0.0.0.0
       PORT: 3001
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_NAME: nommable
-      DATABASE_USER: nommable
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-nommable_password}
-      DB_SYNCHRONIZE: 'false'
-      JWT_SECRET: ${JWT_SECRET:-7K9mP2nR5vX8wA1bC4dE6fG9hJ0kL3mN6oP9qR2sT5uV8wX1yZ4aB7cD0eF3gH6i}
-      JWT_EXPIRES_IN: 7d
+      # SQLite database file (on the persistent volume)
+      DB_PATH: /data/nommable.db
+      # Auth secret for Better Auth session signing (JWT_SECRET also accepted
+      # by the app as a legacy alias if BETTER_AUTH_SECRET is unset)
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8765}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-c3df3df4ebbf19c45090b919603f2494aebb8cc870492c1bb8a42934b4c7d1be}
-      UPLOAD_DIR: /app/uploads
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set (64 hex chars)}
+      UPLOAD_DIR: /data/uploads
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_SECURE: ${SMTP_SECURE:-false}
@@ -48,36 +40,15 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-no-reply@nommable.local}
     ports:
-      - '${BACKEND_PORT:-8766}:3001'
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - '8765:3001'
     volumes:
-      - uploads:/app/uploads
-      - uploads:/app/packages/backend/uploads
-    networks:
-      - nommable-network
+      - nommable_data:/data
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: .
-      dockerfile: packages/frontend/Dockerfile
-      args:
-        - NODE_OPTIONS=--max-old-space-size=2048
-    container_name: nommable-frontend
-    ports:
-      - '${FRONTEND_PORT:-8765}:80'
-    depends_on:
-      - backend
-    networks:
-      - nommable-network
-    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
-  postgres_data:
-  uploads:
-
-networks:
-  nommable-network:
-    driver: bridge
+  nommable_data:

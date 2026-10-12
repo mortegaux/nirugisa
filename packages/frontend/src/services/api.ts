@@ -72,6 +72,7 @@ export const authApi = {
   registerWithInvite: (data: { token: string; username: string; password: string }) =>
     api.post('/auth/register/invite', data),
   login: (data: { username: string; password: string }) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
 };
 
