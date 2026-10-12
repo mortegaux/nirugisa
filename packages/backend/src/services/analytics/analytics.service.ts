@@ -163,13 +163,26 @@ export class AnalyticsService {
       .limit(limit)
       .getRawMany();
 
-    return results.map((r) => ({
-      recipeId: r.recipeId,
-      recipeTitle: r.recipeTitle,
-      count: parseInt(r.count, 10),
-      imageUrl: r.imageUrl,
-      categories: r.categories || [],
-    }));
+    return results.map((r) => {
+      let categories: string[] = [];
+      if (Array.isArray(r.categories)) {
+        categories = r.categories;
+      } else if (typeof r.categories === 'string' && r.categories.trim()) {
+        try {
+          const parsed = JSON.parse(r.categories);
+          if (Array.isArray(parsed)) categories = parsed;
+        } catch {
+          categories = r.categories.split(',').map((c: string) => c.trim()).filter(Boolean);
+        }
+      }
+      return {
+        recipeId: r.recipeId,
+        recipeTitle: r.recipeTitle,
+        count: parseInt(r.count, 10),
+        imageUrl: r.imageUrl,
+        categories,
+      };
+    });
   }
 
   private async getMealTypeDistribution(userId: string): Promise<MealTypeDistribution> {
@@ -261,14 +274,14 @@ export class AnalyticsService {
       .createQueryBuilder('mpr')
       .innerJoin('mpr.mealPlan', 'mp')
       .innerJoin('mpr.recipe', 'r')
-      .select("AVG((r.nutrition->>'calories')::numeric)", 'avgCalories')
-      .addSelect("AVG((r.nutrition->>'protein')::numeric)", 'avgProtein')
-      .addSelect("AVG((r.nutrition->>'carbs')::numeric)", 'avgCarbs')
-      .addSelect("AVG((r.nutrition->>'fat')::numeric)", 'avgFat')
-      .addSelect("AVG((r.nutrition->>'fiber')::numeric)", 'avgFiber')
+      .select("AVG(CAST(json_extract(r.nutrition, '$.calories') AS REAL))", 'avgCalories')
+      .addSelect("AVG(CAST(json_extract(r.nutrition, '$.protein') AS REAL))", 'avgProtein')
+      .addSelect("AVG(CAST(COALESCE(json_extract(r.nutrition, '$.carbohydrates'), json_extract(r.nutrition, '$.carbs')) AS REAL))", 'avgCarbs')
+      .addSelect("AVG(CAST(json_extract(r.nutrition, '$.fat') AS REAL))", 'avgFat')
+      .addSelect("AVG(CAST(json_extract(r.nutrition, '$.fiber') AS REAL))", 'avgFiber')
       .addSelect('COUNT(mpr.id)', 'totalMeals')
       .where('mp.userId = :userId', { userId })
-      .andWhere('r.nutrition IS NOT NULL')
+      .andWhere('r.nutrition IS NOT NULL AND json_valid(r.nutrition)')
       .getRawOne();
 
     return {
@@ -296,7 +309,17 @@ export class AnalyticsService {
     let totalCategories = 0;
 
     recipes.forEach((r) => {
-      const categories = r.categories || [];
+      let categories: string[] = [];
+      if (Array.isArray(r.categories)) {
+        categories = r.categories;
+      } else if (typeof r.categories === 'string' && r.categories.trim()) {
+        try {
+          const parsed = JSON.parse(r.categories);
+          if (Array.isArray(parsed)) categories = parsed;
+        } catch {
+          categories = r.categories.split(',').map((c: string) => c.trim()).filter(Boolean);
+        }
+      }
       categories.forEach((cat: string) => {
         categoryCount[cat] = (categoryCount[cat] || 0) + 1;
         totalCategories++;

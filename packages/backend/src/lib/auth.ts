@@ -38,6 +38,15 @@ export function getAuthDb(): Database.Database {
   if (!authDb) {
     authDb = new Database(config.database.path);
     authDb.pragma('journal_mode = WAL');
+    authDb.exec(`
+      CREATE TABLE IF NOT EXISTS "user" ("id" text not null primary key, "name" text not null, "email" text not null unique, "emailVerified" integer not null, "image" text, "createdAt" date not null, "updatedAt" date not null, "username" text unique, "displayUsername" text, "role" text, "banned" integer, "banReason" text, "banExpires" date);
+      CREATE TABLE IF NOT EXISTS "session" ("id" text not null primary key, "expiresAt" date not null, "token" text not null unique, "createdAt" date not null, "updatedAt" date not null, "ipAddress" text, "userAgent" text, "userId" text not null references "user" ("id") on delete cascade, "impersonatedBy" text);
+      CREATE TABLE IF NOT EXISTS "account" ("id" text not null primary key, "accountId" text not null, "providerId" text not null, "userId" text not null references "user" ("id") on delete cascade, "accessToken" text, "refreshToken" text, "idToken" text, "accessTokenExpiresAt" date, "refreshTokenExpiresAt" date, "scope" text, "password" text, "createdAt" date not null, "updatedAt" date not null);
+      CREATE TABLE IF NOT EXISTS "verification" ("id" text not null primary key, "identifier" text not null, "value" text not null, "expiresAt" date not null, "createdAt" date not null, "updatedAt" date not null);
+      CREATE INDEX IF NOT EXISTS "session_userId_idx" on "session" ("userId");
+      CREATE INDEX IF NOT EXISTS "account_userId_idx" on "account" ("userId");
+      CREATE INDEX IF NOT EXISTS "verification_identifier_idx" on "verification" ("identifier");
+    `);
   }
   return authDb;
 }
@@ -67,40 +76,38 @@ export async function ensureAppUser(
 // type infers cleanly without TS2742.
 function createAuth() {
   return betterAuth({
-  database: getAuthDb(),
-  secret: config.auth.secret,
-  // Same-origin single-container deployment: the backend serves the frontend,
-  // so no explicit baseURL is needed (derived from the request). Set
-  // BETTER_AUTH_URL if serving behind a path prefix.
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: false, // accounts are admin-created or invited
-    autoSignIn: false, // our routes drive sign-in explicitly
-    minPasswordLength: 8,
-  },
-  plugins: [
-    // Sign in with username or email. `name` carries the username for
-    // compatibility with the app's existing user model.
-    username(),
-    // Roles, ban/unban, list/remove users via `auth.api`.
-    admin(),
-    // Accept `Authorization: Bearer <session-token>` (the SPA's pattern).
-    bearer(),
-  ],
-  session: {
-    expiresIn: 7 * 24 * 60 * 60, // 7 days absolute
-    updateAge: 24 * 60 * 60, // 1 day sliding refresh
-    cookieCache: { enabled: false }, // always hit the DB: bans take effect immediately
-  },
-  rateLimit: {
-    enabled: true,
-    window: 60,
-    max: 200,
-  },
-  advanced: {
-    cookiePrefix: 'nommable',
-    useSecureCookies: config.env === 'production',
-  },
+    database: getAuthDb(),
+    secret: config.auth.secret,
+    baseURL: process.env.BETTER_AUTH_URL || `http://localhost:${config.port}`,
+    emailAndPassword: {
+      enabled: true,
+      requireEmailVerification: false, // accounts are admin-created or invited
+      autoSignIn: false, // our routes drive sign-in explicitly
+      minPasswordLength: 8,
+    },
+    plugins: [
+      // Sign in with username or email. `name` carries the username for
+      // compatibility with the app's existing user model.
+      username(),
+      // Roles, ban/unban, list/remove users via `auth.api`.
+      admin(),
+      // Accept `Authorization: Bearer <session-token>` (the SPA's pattern).
+      bearer(),
+    ],
+    session: {
+      expiresIn: 7 * 24 * 60 * 60, // 7 days absolute
+      updateAge: 24 * 60 * 60, // 1 day sliding refresh
+      cookieCache: { enabled: false }, // always hit the DB: bans take effect immediately
+    },
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 200,
+    },
+    advanced: {
+      cookiePrefix: 'nommable',
+      useSecureCookies: process.env.COOKIE_SECURE === 'true',
+    },
   });
 }
 

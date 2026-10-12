@@ -302,13 +302,13 @@ export class EmailService {
           "id" varchar(32) PRIMARY KEY DEFAULT 'default',
           "host" varchar(255) NOT NULL DEFAULT '',
           "port" integer NOT NULL DEFAULT 587,
-          "secure" boolean NOT NULL DEFAULT false,
+          "secure" boolean NOT NULL DEFAULT 0,
           "username" varchar(255) NOT NULL DEFAULT '',
           "password_encrypted" text NOT NULL DEFAULT '',
           "from_email" varchar(255) NOT NULL DEFAULT 'noreply@nommable.local',
           "from_name" varchar(255) NOT NULL DEFAULT 'Nommable',
-          "enabled" boolean NOT NULL DEFAULT true,
-          "updated_at" timestamp NOT NULL DEFAULT now()
+          "enabled" boolean NOT NULL DEFAULT 1,
+          "updated_at" datetime NOT NULL DEFAULT (datetime('now'))
         )
       `);
       this.tableInitialized = true;
@@ -329,13 +329,18 @@ export class EmailService {
           const row = rows[0];
           const host = (row.host || '').trim();
           const pass = safeDecrypt(row.password_encrypted) || '';
-          const enabled = row.enabled !== false;
+          const enabled =
+            row.enabled === undefined || row.enabled === null
+              ? true
+              : row.enabled !== false && row.enabled !== 0 && row.enabled !== '0';
+          const secure =
+            row.secure === true || row.secure === 1 || row.secure === '1' || row.secure === 'true';
           const isConfigured = Boolean(enabled && host);
 
           return {
             host,
             port: Number(row.port) || 587,
-            secure: Boolean(row.secure),
+            secure,
             user: (row.username || '').trim(),
             pass,
             hasPassword: Boolean(pass),
@@ -414,7 +419,7 @@ export class EmailService {
     await AppDataSource.query(
       `INSERT INTO "smtp_settings" (
         "id", "host", "port", "secure", "username", "password_encrypted", "from_email", "from_name", "enabled", "updated_at"
-      ) VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8, now())
+      ) VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT ("id") DO UPDATE SET
         "host" = EXCLUDED."host",
         "port" = EXCLUDED."port",
@@ -424,8 +429,8 @@ export class EmailService {
         "from_email" = EXCLUDED."from_email",
         "from_name" = EXCLUDED."from_name",
         "enabled" = EXCLUDED."enabled",
-        "updated_at" = now()`,
-      [host, port, secure, user, passwordEncrypted, fromEmail, fromName, enabled]
+        "updated_at" = datetime('now')`,
+      [host, port, secure ? 1 : 0, user, passwordEncrypted, fromEmail, fromName, enabled ? 1 : 0]
     );
 
     return this.getSettings();

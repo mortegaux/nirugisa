@@ -18,13 +18,17 @@ export function createApp(): express.Express {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow images to be loaded
+      contentSecurityPolicy: false, // Allow inline theme script and external recipe images
+      strictTransportSecurity: false, // Support plain HTTP self-hosted LAN access
+      crossOriginOpenerPolicy: false,
+      originAgentCluster: false,
     })
   );
   app.use(cors({ origin: config.cors.origin, credentials: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Global rate limit: 100 req/min per IP
+  // API rate limit: 100 req/min per IP (scoped to /api so static SPA assets & images aren't throttled)
   const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 100,
@@ -33,7 +37,7 @@ export function createApp(): express.Express {
     message: { error: 'Too many requests, please try again later' },
   });
 
-  app.use(globalLimiter);
+  app.use('/api', globalLimiter);
 
   // Serve uploaded files (from resolved upload dir, /app/uploads, and local ./uploads)
   app.use('/uploads', express.static(config.upload.dir));

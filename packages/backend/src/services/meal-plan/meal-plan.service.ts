@@ -74,7 +74,7 @@ export class MealPlanService {
 
     if (query.query) {
       qb.andWhere(
-        '(mealPlan.name ILIKE :search OR mealPlan.description ILIKE :search)',
+        "(LOWER(mealPlan.name) LIKE LOWER(:search) OR LOWER(COALESCE(mealPlan.description, '')) LIKE LOWER(:search))",
         { search: `%${query.query}%` }
       );
     }

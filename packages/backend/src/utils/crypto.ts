@@ -54,6 +54,9 @@ export function isEncrypted(value?: string | null): boolean {
 export function safeDecrypt(value?: string | null): string | undefined {
   if (!value) return undefined;
   if (!isEncrypted(value)) {
+    if (value.split(':').length === 3) {
+      return undefined;
+    }
     // Plaintext legacy or unencrypted key, return as-is
     return value;
   }

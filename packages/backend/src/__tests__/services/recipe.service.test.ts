@@ -100,12 +100,18 @@ describe('RecipeService', () => {
       expect(result.total).toBe(25);
     });
 
-    it('does not return recipes from other users', async () => {
-      await service.create(OTHER_USER_ID, buildRecipeDto({ title: 'Other User Recipe' }));
-      const result = await service.findAll(TEST_USER_ID, { pageSize: 100 });
-      result.data.forEach((r: any) => {
-        expect(r.title).not.toBe('Other User Recipe');
-      });
+    it('does not return recipes from other users when sharedRecipes is disabled', async () => {
+      const { SystemSettingsService } = await import('../../services/settings/system-settings.service');
+      await SystemSettingsService.updateSettings({ sharedRecipes: false });
+      try {
+        await service.create(OTHER_USER_ID, buildRecipeDto({ title: 'Other User Recipe' }));
+        const result = await service.findAll(TEST_USER_ID, { pageSize: 100 });
+        result.data.forEach((r: any) => {
+          expect(r.title).not.toBe('Other User Recipe');
+        });
+      } finally {
+        await SystemSettingsService.updateSettings({ sharedRecipes: true });
+      }
     });
   });
 

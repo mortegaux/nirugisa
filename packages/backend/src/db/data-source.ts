@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { config } from '../config';
 import * as entities from './entities';
+import { InitialSchema1788000000000 } from './migrations/1788000000000-InitialSchema';
 
 export const AppDataSource = new DataSource({
   type: 'better-sqlite3',
@@ -9,10 +10,6 @@ export const AppDataSource = new DataSource({
   migrationsRun: true,
   logging: config.env === 'development',
   entities: Object.values(entities),
-  migrations: [
-    config.env === 'production'
-      ? 'dist/db/migrations/*.js'
-      : 'src/db/migrations/*.ts',
-  ],
+  migrations: [InitialSchema1788000000000],
   subscribers: [],
 });

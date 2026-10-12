@@ -23,7 +23,7 @@ npm run migration:run -w packages/backend
 npm run migration:revert -w packages/backend
 
 # Docker
-docker-compose up -d       # Full stack (postgres + backend + frontend)
+docker-compose up -d       # Single-container stack (Express + SQLite + bundled SPA on :8765)
 ```
 
 ## Architecture
@@ -32,21 +32,23 @@ docker-compose up -d       # Full stack (postgres + backend + frontend)
 
 ### Backend (`packages/backend`)
 
-Express.js + TypeORM + PostgreSQL. Layered architecture:
+Express.js + TypeORM + SQLite (`better-sqlite3`, WAL mode) + Better Auth. Layered architecture:
 
 - **Routes** (`src/api/routes/`) define endpoints and wire middleware
 - **Controllers** (`src/api/controllers/`) are thin request handlers that delegate to services
 - **Services** (`src/services/`) contain all business logic
-- **Entities** (`src/db/entities/`) are TypeORM models mapping to DB tables
-- **Middleware** (`src/api/middleware/`) handles auth (JWT), validation (Zod), file upload (Multer), error handling
+- **Entities** (`src/db/entities/`) are TypeORM models mapping to SQLite tables
+- **Auth** (`src/lib/auth.ts`) configures Better Auth (session cookies + Bearer token plugin) backed by the same SQLite database
+- **Middleware** (`src/api/middleware/`) handles auth (Better Auth session/Bearer verification), validation (Zod), file upload (Multer), error handling
 
 **AI service pattern:** `IAIProvider` interface in `src/services/ai/types.ts` with provider implementations in `src/services/ai/providers/`. `AIService.createProvider()` is a factory that caches provider instances per user. Per-user AI config stored in `AIConfig` entity.
 
 **Key details:**
-- TypeORM `synchronize: true` in dev (auto-schema), migrations for production
-- Admin account auto-created on first startup (`AdminInitService`)
+- Single SQLite database (`DATABASE_PATH`, defaults to `/data/nommable.db` in Docker or `./data/nommable.db` locally) with WAL mode and `foreign_keys = ON`
+- TypeORM `synchronize: true` in dev, `InitialSchema1788000000000` migration in production (`migrationsRun: true`)
+- Admin account auto-created on first startup (`AdminSeederService`) via Better Auth
 - Swagger docs at `/api/docs`
-- All queries enforce user ownership via `userId` field
+- All queries enforce user ownership via `userId` field (or respect shared library toggles in `SystemSettingsService`)
 
 ### Frontend (`packages/frontend`)
 

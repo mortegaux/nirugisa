@@ -145,7 +145,7 @@ export class ShoppingListService {
     }
 
     if (query.query) {
-      qb.andWhere('shoppingList.name ILIKE :search', { search: `%${query.query}%` });
+      qb.andWhere('LOWER(shoppingList.name) LIKE LOWER(:search)', { search: `%${query.query}%` });
     }
 
     const [idResults, total] = await qb.skip(skip).take(pageSize).getManyAndCount();

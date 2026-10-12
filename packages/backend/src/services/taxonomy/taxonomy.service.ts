@@ -88,61 +88,37 @@ export class TaxonomyService {
   }
 
   /**
-   * Remove a value from a JSONB string array column across one user's recipes.
+   * Remove a value from a string array column across one user's recipes.
    * Uses row-by-row updates to avoid correlated subquery locking issues.
    */
   private async propagateRemoval(userId: string, column: string, value: string): Promise<void> {
-    // Find affected recipe IDs first (lightweight query)
-    const affected: { id: string }[] = await AppDataSource.query(
-      `SELECT id FROM recipes
-       WHERE "user_id" = $1
-         AND "${column}" IS NOT NULL
-         AND jsonb_typeof("${column}") = 'array'
-         AND "${column}" @> $2::jsonb`,
-      [userId, JSON.stringify([value])]
-    );
-
-    if (affected.length === 0) return;
-
-    // Update each recipe individually to avoid long-held locks
-    for (const row of affected) {
+    const recipes = await this.recipeRepo.find({ where: { userId } });
+    for (const recipe of recipes) {
       try {
-        const recipe = await this.recipeRepo.findOneBy({ id: row.id });
-        if (!recipe) continue;
         const arr: string[] = (recipe as any)[column] || [];
+        if (!Array.isArray(arr) || !arr.includes(value)) continue;
         (recipe as any)[column] = arr.filter((v) => v !== value);
         await this.recipeRepo.save(recipe);
       } catch (err) {
-        console.error(`Failed to remove "${value}" from recipe ${row.id}:`, err);
+        console.error(`Failed to remove "${value}" from recipe ${recipe.id}:`, err);
       }
     }
   }
 
   /**
-   * Rename a value in a JSONB string array column across one user's recipes.
+   * Rename a value in a string array column across one user's recipes.
    * Uses row-by-row updates to avoid correlated subquery locking issues.
    */
   private async propagateRename(userId: string, column: string, oldName: string, newName: string): Promise<void> {
-    const affected: { id: string }[] = await AppDataSource.query(
-      `SELECT id FROM recipes
-       WHERE "user_id" = $1
-         AND "${column}" IS NOT NULL
-         AND jsonb_typeof("${column}") = 'array'
-         AND "${column}" @> $2::jsonb`,
-      [userId, JSON.stringify([oldName])]
-    );
-
-    if (affected.length === 0) return;
-
-    for (const row of affected) {
+    const recipes = await this.recipeRepo.find({ where: { userId } });
+    for (const recipe of recipes) {
       try {
-        const recipe = await this.recipeRepo.findOneBy({ id: row.id });
-        if (!recipe) continue;
         const arr: string[] = (recipe as any)[column] || [];
+        if (!Array.isArray(arr) || !arr.includes(oldName)) continue;
         (recipe as any)[column] = arr.map((v) => (v === oldName ? newName : v));
         await this.recipeRepo.save(recipe);
       } catch (err) {
-        console.error(`Failed to rename "${oldName}" → "${newName}" in recipe ${row.id}:`, err);
+        console.error(`Failed to rename "${oldName}" → "${newName}" in recipe ${recipe.id}:`, err);
       }
     }
   }

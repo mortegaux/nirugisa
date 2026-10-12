@@ -87,18 +87,42 @@ function resolveEncryptionKey(authSecret: string): string {
 
 function resolveUploadDir(): string {
   const envDir = (process.env.UPLOAD_DIR || '').trim();
-  if (envDir) return envDir;
-  if (fs.existsSync('/data/uploads')) return '/data/uploads';
-  if (fs.existsSync('/app/uploads')) return '/app/uploads';
-  return path.join(process.cwd(), 'uploads');
+  const resolved = envDir
+    ? envDir
+    : fs.existsSync('/data')
+      ? '/data/uploads'
+      : fs.existsSync('/app/uploads')
+        ? '/app/uploads'
+        : path.join(process.cwd(), 'uploads');
+  try {
+    if (!fs.existsSync(resolved)) {
+      fs.mkdirSync(resolved, { recursive: true });
+    }
+  } catch {
+    // Ignore if read-only in test/build environment
+  }
+  return resolved;
 }
 
 function resolveDatabasePath(): string {
   const envPath = (process.env.DB_PATH || '').trim();
-  if (envPath) return envPath;
   // Single-container default: persistent volume mounted at /data
-  if (fs.existsSync('/data')) return '/data/nommable.db';
-  return path.join(process.cwd(), 'nommable.db');
+  const resolved = envPath
+    ? envPath
+    : fs.existsSync('/data')
+      ? '/data/nommable.db'
+      : path.join(process.cwd(), 'nommable.db');
+  if (resolved !== ':memory:') {
+    try {
+      const dir = path.dirname(resolved);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch {
+      // Ignore if directory cannot be created yet
+    }
+  }
+  return resolved;
 }
 
 const authSecret = resolveAuthSecret();

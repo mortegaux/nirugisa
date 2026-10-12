@@ -111,7 +111,7 @@ export class RecipeService {
 
     if (query.query) {
       qb.andWhere(
-        '(recipe.title ILIKE :search OR recipe.description ILIKE :search OR recipe.tags::text ILIKE :search)',
+        "(LOWER(recipe.title) LIKE LOWER(:search) OR LOWER(COALESCE(recipe.description, '')) LIKE LOWER(:search) OR LOWER(COALESCE(recipe.tags, '')) LIKE LOWER(:search))",
         { search: `%${query.query}%` }
       );
     }
@@ -148,12 +148,12 @@ export class RecipeService {
       if (categories.length > 0) {
         qb.andWhere(
           `(
-            (recipe.categories IS NOT NULL AND jsonb_typeof(recipe.categories) = 'array' AND EXISTS (
-              SELECT 1 FROM jsonb_array_elements_text(recipe.categories) AS cat WHERE LOWER(cat) IN (:...categories)
+            (recipe.categories IS NOT NULL AND json_valid(recipe.categories) AND json_type(recipe.categories) = 'array' AND EXISTS (
+              SELECT 1 FROM json_each(recipe.categories) AS cat WHERE LOWER(cat.value) IN (:...categories)
             ))
             OR
-            (recipe.tags IS NOT NULL AND jsonb_typeof(recipe.tags) = 'array' AND EXISTS (
-              SELECT 1 FROM jsonb_array_elements_text(recipe.tags) AS tag WHERE LOWER(tag) IN (:...categories)
+            (recipe.tags IS NOT NULL AND json_valid(recipe.tags) AND json_type(recipe.tags) = 'array' AND EXISTS (
+              SELECT 1 FROM json_each(recipe.tags) AS tag WHERE LOWER(tag.value) IN (:...categories)
             ))
           )`,
           { categories }
@@ -166,12 +166,12 @@ export class RecipeService {
       if (tags.length > 0) {
         qb.andWhere(
           `(
-            (recipe.tags IS NOT NULL AND jsonb_typeof(recipe.tags) = 'array' AND EXISTS (
-              SELECT 1 FROM jsonb_array_elements_text(recipe.tags) AS tag WHERE LOWER(tag) IN (:...tags)
+            (recipe.tags IS NOT NULL AND json_valid(recipe.tags) AND json_type(recipe.tags) = 'array' AND EXISTS (
+              SELECT 1 FROM json_each(recipe.tags) AS tag WHERE LOWER(tag.value) IN (:...tags)
             ))
             OR
-            (recipe.categories IS NOT NULL AND jsonb_typeof(recipe.categories) = 'array' AND EXISTS (
-              SELECT 1 FROM jsonb_array_elements_text(recipe.categories) AS cat WHERE LOWER(cat) IN (:...tags)
+            (recipe.categories IS NOT NULL AND json_valid(recipe.categories) AND json_type(recipe.categories) = 'array' AND EXISTS (
+              SELECT 1 FROM json_each(recipe.categories) AS cat WHERE LOWER(cat.value) IN (:...tags)
             ))
           )`,
           { tags }
@@ -184,7 +184,7 @@ export class RecipeService {
       for (let i = 0; i < query.includeIngredients.length; i++) {
         const paramName = `includeIng${i}`;
         qb.andWhere(
-          `EXISTS (SELECT 1 FROM ingredients ing WHERE ing."recipe_id" = recipe.id AND ing.name ILIKE :${paramName})`,
+          `EXISTS (SELECT 1 FROM ingredients ing WHERE ing."recipe_id" = recipe.id AND LOWER(ing.name) LIKE LOWER(:${paramName}))`,
           { [paramName]: `%${query.includeIngredients[i]}%` }
         );
       }
@@ -195,7 +195,7 @@ export class RecipeService {
       for (let i = 0; i < query.excludeIngredients.length; i++) {
         const paramName = `excludeIng${i}`;
         qb.andWhere(
-          `NOT EXISTS (SELECT 1 FROM ingredients ing WHERE ing."recipe_id" = recipe.id AND ing.name ILIKE :${paramName})`,
+          `NOT EXISTS (SELECT 1 FROM ingredients ing WHERE ing."recipe_id" = recipe.id AND LOWER(ing.name) LIKE LOWER(:${paramName}))`,
           { [paramName]: `%${query.excludeIngredients[i]}%` }
         );
       }
@@ -211,21 +211,27 @@ export class RecipeService {
 
     for (const { field, min, max } of nutritionFilters) {
       if (min !== undefined) {
-        qb.andWhere(`(recipe.nutrition->>'${field}')::numeric >= :min${field}`, { [`min${field}`]: min });
+        qb.andWhere(
+          `(recipe.nutrition IS NOT NULL AND json_valid(recipe.nutrition) AND CAST(json_extract(recipe.nutrition, '$.${field}') AS REAL) >= :min${field})`,
+          { [`min${field}`]: min }
+        );
       }
       if (max !== undefined) {
-        qb.andWhere(`(recipe.nutrition->>'${field}')::numeric <= :max${field}`, { [`max${field}`]: max });
+        qb.andWhere(
+          `(recipe.nutrition IS NOT NULL AND json_valid(recipe.nutrition) AND CAST(json_extract(recipe.nutrition, '$.${field}') AS REAL) <= :max${field})`,
+          { [`max${field}`]: max }
+        );
       }
     }
 
     // Source filter
     if (query.source?.length) {
       const conditions: string[] = [];
-      if (query.source.includes('ai-generated')) conditions.push('recipe."is_ai_generated" = true');
+      if (query.source.includes('ai-generated')) conditions.push('recipe."is_ai_generated" = 1');
       if (query.source.includes('imported'))
-        conditions.push('(recipe."is_ai_generated" = false AND recipe."source_url" IS NOT NULL)');
+        conditions.push('(recipe."is_ai_generated" = 0 AND recipe."source_url" IS NOT NULL)');
       if (query.source.includes('manual'))
-        conditions.push('(recipe."is_ai_generated" = false AND recipe."source_url" IS NULL)');
+        conditions.push('(recipe."is_ai_generated" = 0 AND recipe."source_url" IS NULL)');
       if (conditions.length) qb.andWhere(`(${conditions.join(' OR ')})`);
     }
 
@@ -334,17 +340,20 @@ export class RecipeService {
 
   async getDistinctCategories(userId: string): Promise<string[]> {
     const sharedRecipes = await SystemSettingsService.isSharedRecipesEnabled();
-    const qb = this.recipeRepo
-      .createQueryBuilder('recipe')
-      .select("DISTINCT jsonb_array_elements_text(recipe.categories)", 'category')
-      .where('recipe.categories IS NOT NULL');
+    const recipes = await this.recipeRepo.find({
+      where: sharedRecipes ? undefined : { userId },
+      select: ['categories'],
+    });
 
-    if (!sharedRecipes) {
-      qb.andWhere('recipe.userId = :userId', { userId });
+    const categories = new Set<string>();
+    for (const r of recipes) {
+      if (Array.isArray(r.categories)) {
+        for (const cat of r.categories) {
+          if (cat) categories.add(cat);
+        }
+      }
     }
-
-    const result = await qb.getRawMany();
-    return result.map((r: any) => r.category).sort();
+    return Array.from(categories).sort();
   }
 
   async bulkUpdate(ids: string[], userId: string, updates: { tags?: string[]; categories?: string[] }): Promise<number> {

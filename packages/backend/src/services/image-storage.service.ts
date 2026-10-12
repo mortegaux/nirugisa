@@ -124,7 +124,7 @@ export class ImageStorageService {
 
             const relPath = `${subdir}/${filename}`;
             const existing = await AppDataSource.query(
-              `SELECT 1 FROM "stored_images" WHERE "file_path" = $1 LIMIT 1`,
+              `SELECT 1 FROM "stored_images" WHERE "file_path" = ? LIMIT 1`,
               [relPath]
             );
 
@@ -134,7 +134,7 @@ export class ImageStorageService {
               const mimeType = EXT_TO_MIME[ext] || 'image/jpeg';
               await AppDataSource.query(
                 `INSERT INTO "stored_images" ("file_path", "mime_type", "data")
-                 VALUES ($1, $2, $3)
+                 VALUES (?, ?, ?)
                  ON CONFLICT ("file_path") DO NOTHING`,
                 [relPath, mimeType, buffer]
               );
@@ -146,7 +146,7 @@ export class ImageStorageService {
       }
     }
 
-    // 2. Restore any images in PostgreSQL that are missing from the primary upload directory
+    // 2. Restore any images in database that are missing from the primary upload directory
     try {
       const rows: Array<{ file_path: string }> = await AppDataSource.query(
         `SELECT "file_path" FROM "stored_images"`
@@ -160,7 +160,7 @@ export class ImageStorageService {
         const targetPath = path.join(targetDir, path.basename(filename));
         if (!fs.existsSync(targetPath)) {
           const dataRows: Array<{ data: Buffer }> = await AppDataSource.query(
-            `SELECT "data" FROM "stored_images" WHERE "file_path" = $1 LIMIT 1`,
+            `SELECT "data" FROM "stored_images" WHERE "file_path" = ? LIMIT 1`,
             [row.file_path]
           );
           if (dataRows?.[0]?.data) {
@@ -174,7 +174,7 @@ export class ImageStorageService {
   }
 
   /**
-   * Save an image buffer to both the unified upload directory and PostgreSQL.
+   * Save an image buffer to both the unified upload directory and database.
    * Used by AI-generated images, uploaded images, and downloaded recipe images.
    */
   static async saveImageBuffer(
@@ -214,13 +214,13 @@ export class ImageStorageService {
       }
     }
 
-    // 3. Persist in PostgreSQL so it survives container rebuilds or volume resets
+    // 3. Persist in database so it survives container rebuilds or volume resets
     const relPath = `${subdir}/${filename}`;
     if (AppDataSource.isInitialized) {
       try {
         await AppDataSource.query(
           `INSERT INTO "stored_images" ("file_path", "mime_type", "data")
-           VALUES ($1, $2, $3)
+           VALUES (?, ?, ?)
            ON CONFLICT ("file_path") DO UPDATE
            SET "mime_type" = EXCLUDED."mime_type", "data" = EXCLUDED."data"`,
           [relPath, normalizedMime, buffer]
@@ -235,7 +235,7 @@ export class ImageStorageService {
   }
 
   /**
-   * Persist an already-uploaded Multer disk file into PostgreSQL and mirror directories.
+   * Persist an already-uploaded Multer disk file into database and mirror directories.
    */
   static async persistUploadedDiskFile(
     subdir: 'recipes' | 'profiles',
@@ -274,12 +274,12 @@ export class ImageStorageService {
         }
       }
 
-      // Save in PostgreSQL
+      // Save in database
       const relPath = `${subdir}/${safeFilename}`;
       if (AppDataSource.isInitialized) {
         await AppDataSource.query(
           `INSERT INTO "stored_images" ("file_path", "mime_type", "data")
-           VALUES ($1, $2, $3)
+           VALUES (?, ?, ?)
            ON CONFLICT ("file_path") DO UPDATE
            SET "mime_type" = EXCLUDED."mime_type", "data" = EXCLUDED."data"`,
           [relPath, resolvedMime, buffer]
@@ -293,7 +293,7 @@ export class ImageStorageService {
   }
 
   /**
-   * Retrieve an image from PostgreSQL if missing from disk, and restore it to disk.
+   * Retrieve an image from database if missing from disk, and restore it to disk.
    */
   static async getAndRestoreImage(
     subdir: string,
@@ -308,7 +308,7 @@ export class ImageStorageService {
 
     try {
       const rows: Array<{ mime_type: string; data: Buffer }> = await AppDataSource.query(
-        `SELECT "mime_type", "data" FROM "stored_images" WHERE "file_path" = $1 LIMIT 1`,
+        `SELECT "mime_type", "data" FROM "stored_images" WHERE "file_path" = ? LIMIT 1`,
         [relPath]
       );
 

@@ -14,22 +14,21 @@ Nommable is a self-hosted recipe management system featuring per-user data isola
 ### Architecture & Workspaces
 - **Monorepo (`npm workspaces`):**
   - `@nommable/shared` (`packages/shared`): Common TypeScript models, interfaces, and DTOs.
-  - `@nommable/backend` (`packages/backend`): Node.js / Express.js REST API using TypeORM and PostgreSQL.
+  - `@nommable/backend` (`packages/backend`): Node.js / Express.js REST API + static SPA server using TypeORM, SQLite (`better-sqlite3`, WAL mode), and Better Auth.
   - `@nommable/frontend` (`packages/frontend`): React 18 + Vite SPA using Tailwind CSS, Radix UI, and Zustand.
 
 ### Development & Deployment Setup
 - **Development Environment:** Android Laptop (Android host with Debian Linux VM execution shell).
-- **Fast Local Build Cache (Important):** Because `/storage/emulated/10` is mounted over `virtiofs` / FUSE, running `tsc` or `vite build` directly in the workspace is slow. Copy changed `src/` directories into `/home/droid/.cache/projects/nommable-build` (on the VM's native `ext4` filesystem) and run `npm --prefix /home/droid/.cache/projects/nommable-build/packages/<pkg> run build` for 2-second builds.
+- **Fast Local Build Cache (Important):** Because `/storage/emulated/10` is mounted over `virtiofs` / FUSE, running `tsc`, `vite build`, or `jest` directly in the workspace is slow. Copy changed `src/` directories into `/home/droid/.cache/projects/nommable-build` (on the VM's native `ext4` filesystem) and run `npm --prefix /home/droid/.cache/projects/nommable-build run build` (or `run test`) for 2-second builds.
 - **Testing & Deployment Environment:** The user tests headlessly by deploying directly to a separate remote Linux server running Docker via **Portainer**.
 - **Crucial Rule:** Do **not** leave local development servers (`npm run dev`) running in the background. Always commit and push working changes to GitHub (`main`) so the user can pull the latest image/code on their server.
 - **Default System Admin Credentials:**
   - **Username:** `admin` (configurable via `ADMIN_USERNAME`)
   - **Password:** `admin123` (configurable via `ADMIN_PASSWORD` in `docker-compose.portainer.yml` / `.env`)
-  - Seeded automatically on first boot by `packages/backend/src/services/seeder/admin-seeder.service.ts` with `isSystemAdmin: true`.
-- **Port Mapping (Docker / Portainer):**
-  - **`8765`**: Frontend Web UI (served via Nginx). Open `http://<server-ip>:8765` in the browser.
-  - **`8766`**: Backend Express API. Note: Accessing this port directly in a browser results in `Cannot GET /` because it is an API-only server without root index routes.
-  - **`5432`**: Internal PostgreSQL container network.
+  - Seeded automatically on first boot by `packages/backend/src/services/seeder/admin-seeder.service.ts` via Better Auth with `isSystemAdmin: true`.
+- **Single-Container Port & Volume Mapping (Docker / Portainer):**
+  - **`8765`**: Unified Express server serving both the React SPA (`packages/frontend/dist`) and `/api/*` + `/uploads/*` routes inside a single container (`Dockerfile` at repo root). Open `http://<server-ip>:8765` in the browser.
+  - **`/data` Volume (`nommable_data`)**: Single persistent Docker volume holding both `/data/nommable.db` (SQLite database in WAL mode) and `/data/uploads` (uploaded and AI-generated images).
 
 ---
 
@@ -115,24 +114,28 @@ Nommable is a self-hosted recipe management system featuring per-user data isola
 
 ## 3. Database Schema & Migrations
 
-- **Database:** PostgreSQL with TypeORM.
-- **Schema Management:** Driven strictly by migrations (`migrationsRun: true` when `DB_SYNCHRONIZE=false`).
-- **Baseline Migration:** `1787949824880-BaselineSchema.ts` (creates baseline tables for clean installs).
-- **Safety Migration:** `1787949824881-EnsureBaselineTables.ts` (creates missing tables idempotently for existing/upgraded volumes).
-- **Image Model Migration:** `1787949824882-AddImageModelToAIConfig.ts` (adds `image_model` column to `ai_configs`).
-- **Image Key Migration:** `1787949824883-AddImageApiKeyToAIConfig.ts` (adds `image_api_key` column to `ai_configs`).
+- **Database:** SQLite (`better-sqlite3` driver in WAL mode with `foreign_keys = ON`) via TypeORM (`packages/backend/src/db/data-source.ts`).
+- **Database File Location:** Configured via `DATABASE_PATH` (defaults to `/data/nommable.db` in Docker/Portainer or `./data/nommable.db` locally).
+- **Schema Management:**
+  - `packages/backend/src/lib/auth.ts` immediately initializes the 4 Better Auth tables (`user`, `session`, `account`, `verification`) with `CREATE TABLE IF NOT EXISTS` on database open.
+  - TypeORM runs `InitialSchema1788000000000` (`packages/backend/src/db/migrations/1788000000000-InitialSchema.ts`) with `migrationsRun: true` when `DB_SYNCHRONIZE=false`, creating all application tables and indexes idempotently with `IF NOT EXISTS`.
+  - Runtime services (`SystemSettingsService.initialize()`, `EmailService.initialize()`, `ImageStorageService.initialize()`) ensure `system_settings`, `smtp_settings`, and `stored_images` exist on startup.
 - **Resetting Database (Testing only):**
-  - To wipe the database completely on Portainer: Stop the stack, remove the PostgreSQL volume, and restart the stack.
+  - To wipe the database completely on Portainer: Stop the stack, remove the `nommable_data` volume (or delete `/data/nommable.db*`), and restart the stack.
 
 ---
 
 ## 4. Key Security & Environment Variables
 
-- `JWT_SECRET`: Secret key used to sign and verify user authentication tokens.
-- `ENCRYPTION_KEY`: 32-byte hex string (`openssl rand -hex 32`) used for AES-256-GCM encryption of stored AI API keys at rest.
-- `DB_SYNCHRONIZE`: Set to `false` for production/Portainer (schema is managed via migrations).
-- `CORS_ORIGIN`: Allowed origins (e.g. `http://<server-ip>:8765`).
-- All API routes and database queries enforce `userId` scoping to ensure multi-user isolation.
+- `BETTER_AUTH_SECRET`: Secret key (minimum 32 chars, `openssl rand -hex 32`) used by Better Auth to sign and verify sessions and tokens (also serves as fallback derivation seed for `ENCRYPTION_KEY`).
+- `BETTER_AUTH_URL`: External URL of the Nommable instance (e.g., `http://<server-ip>:8765`).
+- `ENCRYPTION_KEY`: Optional 32-byte hex string (`openssl rand -hex 32`) used for AES-256-GCM encryption of stored AI API keys and SMTP passwords at rest (auto-derived from `BETTER_AUTH_SECRET` if omitted).
+- `DATABASE_PATH`: Path to the SQLite database file (defaults to `/data/nommable.db` in Docker).
+- `UPLOAD_DIR`: Directory for uploaded and AI-generated images (defaults to `/data/uploads` in Docker).
+- `DB_SYNCHRONIZE`: Set to `false` for production/Portainer (schema is managed via `InitialSchema1788000000000`).
+- `COOKIE_SECURE`: Defaults to `false` so plain-HTTP LAN deployments (`http://<server-ip>:8765`) work out of the box; set to `true` only when serving strictly over HTTPS.
+- `CORS_ORIGIN`: Allowed origins (e.g. `http://<server-ip>:8765`, or `*` for single-container same-origin deployment).
+- All API routes and database queries enforce `userId` scoping (or respect shared library toggles in `SystemSettingsService`).
 
 ### Docker Build Exit Code 2 Fix (Oct 2026)
 - **Problem Solved:** Portainer / Docker Compose failed with `failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 2`.
@@ -383,6 +386,30 @@ Nommable is a self-hosted recipe management system featuring per-user data isola
   - Moved secrets out of `docker-compose.yml` and `release/docker-compose.yml` into gitignored `.env` files with `.env.example` templates, and added production startup guards in `config/index.ts`.
   - Added DNS/IP SSRF protection (`assertSafeUrl`, `isBlockedIp`) in `ScraperService` blocking loopback, private RFC1918, carrier-grade NAT, link-local/metadata (`169.254.0.0/16`), and IPv6 local ranges.
   - Added magic-byte image content verification (`validateImageContent` in `upload.ts`) across recipe image upload, extraction, and profile photo endpoints.
+
+### Single-Container Docker, SQLite (`better-sqlite3`) & Better Auth Migration (Oct 2026)
+- **Architecture Overhaul (`0e0badd..HEAD`):**
+  1. **PostgreSQL → SQLite (`better-sqlite3`, WAL mode):**
+     - Replaced the external PostgreSQL container and `pg` driver with an embedded `better-sqlite3` database (`packages/backend/src/db/data-source.ts`) configured with `PRAGMA journal_mode = WAL`, `PRAGMA synchronous = NORMAL`, `PRAGMA foreign_keys = ON`, and `PRAGMA busy_timeout = 5000`.
+     - Replaced all PostgreSQL-specific column types across all 22 TypeORM entities (`jsonb` → `simple-json`, `timestamp` → `datetime`, `bytea` → `blob`, `enum` → `varchar`).
+     - Consolidated all database migrations into `InitialSchema1788000000000` (`packages/backend/src/db/migrations/1788000000000-InitialSchema.ts`) with idempotent `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` DDL.
+  2. **Hand-Rolled JWT → Better Auth (`packages/backend/src/lib/auth.ts`):**
+     - Replaced `jsonwebtoken` and `bcrypt` with `better-auth` (`emailAndPassword` + `bearer()` plugin) backed by the same SQLite database (`user`, `session`, `account`, `verification` tables).
+     - `getAuthDb()` creates the 4 Better Auth tables immediately with `IF NOT EXISTS` when opening SQLite so Better Auth never logs a startup schema mismatch before TypeORM migrations run.
+     - Preserved the REST response shapes on `/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/refresh`, `/api/auth/me`, and `/api/auth/change-password` (`packages/backend/src/services/auth/auth.service.ts`) so the React frontend works seamlessly with both Bearer tokens and HTTP cookies.
+  3. **3-Container Stack → Single-Container Deployment (`Dockerfile`, `docker-compose.yml`, `docker-compose.portainer.yml`):**
+     - Consolidated the multi-container stack (PostgreSQL + Backend + Frontend Nginx) into a single root `Dockerfile` (`node:20-alpine`) that builds `@nommable/shared`, `@nommable/backend`, and `@nommable/frontend` and serves the built SPA (`packages/frontend/dist`), `/api/*`, and `/uploads/*` from Express on port `8765`.
+     - Single persistent volume `nommable_data:/data` stores both `/data/nommable.db` and `/data/uploads`.
+     - Removed the obsolete `release/` mirror directory and per-package Dockerfiles/nginx configs.
+  4. **SQLite Query & Runtime Compatibility Hardening:**
+     - Converted all remaining raw SQL and QueryBuilder expressions from PostgreSQL syntax to SQLite (`better-sqlite3`):
+       - `SystemSettingsService` (`packages/backend/src/services/settings/system-settings.service.ts`): Replaced `now()`, multi-column `ALTER TABLE`, and `$1..$7` placeholders with `datetime('now')`, single-column `ALTER TABLE`, and `?`; bound booleans as `1`/`0` integers and added `toBool()` to parse SQLite `0`/`1` integers accurately (`0 !== false` in JS!).
+       - `EmailService` (`packages/backend/src/services/email/email.service.ts`): Replaced `now()` and `$1..$8` with `datetime('now')` and `?`; bound `secure` and `enabled` booleans as `1`/`0` and parsed `0`/`1` integers on read.
+       - `ImageStorageService` (`packages/backend/src/services/image-storage.service.ts`): Replaced `$1..$3` placeholders with `?` across all `stored_images` queries.
+       - `RecipeService` (`packages/backend/src/services/recipe/recipe.service.ts`): Replaced `ILIKE`, `::text`, `jsonb_typeof()`, `jsonb_array_elements_text()`, and `(recipe.nutrition->>'...')::numeric` with `LOWER(...) LIKE LOWER(...)`, `json_valid(...) AND json_type(...) = 'array'`, `json_each(...)`, and `CAST(json_extract(...) AS REAL)`.
+       - `TaxonomyService`, `MealPlanService`, `ShoppingListService`, `AnalyticsService`: Replaced PostgreSQL `@> $2::jsonb`, `ILIKE`, and `->>` operators with TypeORM repository queries, `LOWER(...) LIKE LOWER(...)`, and `json_extract()`.
+     - Configured `helmet` in `packages/backend/src/app.ts` for self-hosted HTTP LAN access (`contentSecurityPolicy: false`, `strictTransportSecurity: false`, `crossOriginOpenerPolicy: false`, `originAgentCluster: false`) and scoped `globalLimiter` (`100 req/min`) to `/api` so static SPA assets and `/uploads` images are never throttled.
+     - Updated backend & frontend test suites (`npm test`) to run against in-memory SQLite (`:memory:`), with all 28 backend tests and frontend Vitest tests passing.
 
 ---
 

@@ -20,6 +20,14 @@ const DEFAULT_SETTINGS: SystemSettingsData = {
   sharedBatchCooking: true,
 };
 
+function toBool(val: unknown, fallback = true): boolean {
+  if (val === undefined || val === null) return fallback;
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'number') return val !== 0;
+  if (typeof val === 'string') return val !== '0' && val.toLowerCase() !== 'false';
+  return Boolean(val);
+}
+
 export class SystemSettingsService {
   private static tableInitialized = false;
   private static cachedSettings: SystemSettingsData | null = null;
@@ -30,24 +38,15 @@ export class SystemSettingsService {
       await AppDataSource.query(`
         CREATE TABLE IF NOT EXISTS "system_settings" (
           "id" varchar(32) PRIMARY KEY DEFAULT 'default',
-          "shared_recipes" boolean NOT NULL DEFAULT true,
-          "show_recipe_author" boolean NOT NULL DEFAULT true,
-          "shared_collections" boolean NOT NULL DEFAULT true,
-          "shared_meal_plans" boolean NOT NULL DEFAULT true,
-          "shared_shopping_lists" boolean NOT NULL DEFAULT true,
-          "shared_pantry" boolean NOT NULL DEFAULT true,
-          "shared_batch_cooking" boolean NOT NULL DEFAULT true,
-          "updated_at" timestamp NOT NULL DEFAULT now()
+          "shared_recipes" boolean NOT NULL DEFAULT 1,
+          "show_recipe_author" boolean NOT NULL DEFAULT 1,
+          "shared_collections" boolean NOT NULL DEFAULT 1,
+          "shared_meal_plans" boolean NOT NULL DEFAULT 1,
+          "shared_shopping_lists" boolean NOT NULL DEFAULT 1,
+          "shared_pantry" boolean NOT NULL DEFAULT 1,
+          "shared_batch_cooking" boolean NOT NULL DEFAULT 1,
+          "updated_at" datetime NOT NULL DEFAULT (datetime('now'))
         )
-      `);
-      await AppDataSource.query(`
-        ALTER TABLE "system_settings"
-          ADD COLUMN IF NOT EXISTS "show_recipe_author" boolean NOT NULL DEFAULT true,
-          ADD COLUMN IF NOT EXISTS "shared_collections" boolean NOT NULL DEFAULT true,
-          ADD COLUMN IF NOT EXISTS "shared_meal_plans" boolean NOT NULL DEFAULT true,
-          ADD COLUMN IF NOT EXISTS "shared_shopping_lists" boolean NOT NULL DEFAULT true,
-          ADD COLUMN IF NOT EXISTS "shared_pantry" boolean NOT NULL DEFAULT true,
-          ADD COLUMN IF NOT EXISTS "shared_batch_cooking" boolean NOT NULL DEFAULT true
       `);
       await AppDataSource.query(`
         INSERT INTO "system_settings" (
@@ -61,7 +60,7 @@ export class SystemSettingsService {
           "shared_batch_cooking",
           "updated_at"
         )
-        VALUES ('default', true, true, true, true, true, true, true, now())
+        VALUES ('default', 1, 1, 1, 1, 1, 1, 1, datetime('now'))
         ON CONFLICT ("id") DO NOTHING
       `);
       this.tableInitialized = true;
@@ -94,13 +93,13 @@ export class SystemSettingsService {
         if (rows && rows.length > 0) {
           const r = rows[0];
           this.cachedSettings = {
-            sharedRecipes: r.shared_recipes !== false,
-            showRecipeAuthor: r.show_recipe_author !== false,
-            sharedCollections: r.shared_collections !== false,
-            sharedMealPlans: r.shared_meal_plans !== false,
-            sharedShoppingLists: r.shared_shopping_lists !== false,
-            sharedPantry: r.shared_pantry !== false,
-            sharedBatchCooking: r.shared_batch_cooking !== false,
+            sharedRecipes: toBool(r.shared_recipes, true),
+            showRecipeAuthor: toBool(r.show_recipe_author, true),
+            sharedCollections: toBool(r.shared_collections, true),
+            sharedMealPlans: toBool(r.shared_meal_plans, true),
+            sharedShoppingLists: toBool(r.shared_shopping_lists, true),
+            sharedPantry: toBool(r.shared_pantry, true),
+            sharedBatchCooking: toBool(r.shared_batch_cooking, true),
           };
           return this.cachedSettings;
         }
@@ -190,7 +189,7 @@ export class SystemSettingsService {
            "shared_batch_cooking",
            "updated_at"
          )
-         VALUES ('default', $1, $2, $3, $4, $5, $6, $7, now())
+         VALUES ('default', ?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT ("id") DO UPDATE SET
            "shared_recipes" = EXCLUDED."shared_recipes",
            "show_recipe_author" = EXCLUDED."show_recipe_author",
@@ -199,15 +198,15 @@ export class SystemSettingsService {
            "shared_shopping_lists" = EXCLUDED."shared_shopping_lists",
            "shared_pantry" = EXCLUDED."shared_pantry",
            "shared_batch_cooking" = EXCLUDED."shared_batch_cooking",
-           "updated_at" = now()`,
+           "updated_at" = datetime('now')`,
         [
-          next.sharedRecipes,
-          next.showRecipeAuthor,
-          next.sharedCollections,
-          next.sharedMealPlans,
-          next.sharedShoppingLists,
-          next.sharedPantry,
-          next.sharedBatchCooking,
+          next.sharedRecipes ? 1 : 0,
+          next.showRecipeAuthor ? 1 : 0,
+          next.sharedCollections ? 1 : 0,
+          next.sharedMealPlans ? 1 : 0,
+          next.sharedShoppingLists ? 1 : 0,
+          next.sharedPantry ? 1 : 0,
+          next.sharedBatchCooking ? 1 : 0,
         ]
       );
     }
