@@ -25,7 +25,7 @@ export class UserInvitation {
   invitedBy!: User;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: UserRole,
     default: UserRole.USER,
   })
@@ -34,7 +34,7 @@ export class UserInvitation {
   @Column('varchar', { unique: true })
   token!: string;
 
-  @Column('timestamp', { name: 'expires_at' })
+  @Column('datetime', { name: 'expires_at' })
   expiresAt!: Date;
 
   @Column('boolean', { default: false })

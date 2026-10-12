@@ -33,11 +33,11 @@ export class User {
   @Column('varchar', { name: 'profile_photo_url', nullable: true })
   profilePhotoUrl?: string;
 
-  @Column('varchar', { name: 'password_hash' })
-  passwordHash!: string;
+  // Note: passwords are managed by Better Auth (see src/lib/auth.ts) in its
+  // own `account` table — never stored here.
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: UserRole,
     default: UserRole.USER,
   })

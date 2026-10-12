@@ -41,7 +41,7 @@ export class UserAchievement {
   completed!: boolean;
 
   // Date when achievement was completed
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   completedAt?: Date;
 
   @CreateDateColumn()

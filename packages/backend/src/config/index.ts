@@ -10,16 +10,12 @@ interface Config {
   port: number;
   host: string;
   database: {
-    host: string;
-    port: number;
-    name: string;
-    user: string;
-    password: string;
-    synchronize: boolean;
+    /** Filesystem path to the SQLite database file. */
+    path: string;
   };
-  jwt: {
+  auth: {
+    /** Secret for Better Auth (session signing/encryption). */
     secret: string;
-    expiresIn: string;
   };
   admin: {
     username: string;
@@ -65,7 +61,17 @@ function parseCorsOrigin(value: string): string | string[] | boolean {
   return value;
 }
 
-function resolveEncryptionKey(): string {
+function resolveAuthSecret(): string {
+  // BETTER_AUTH_SECRET is preferred; JWT_SECRET is accepted as a legacy alias
+  // so existing deployments keep working after the Better Auth migration.
+  return (
+    process.env.BETTER_AUTH_SECRET ||
+    process.env.JWT_SECRET ||
+    'nommable-dev-secret-key-change-this-in-production'
+  );
+}
+
+function resolveEncryptionKey(authSecret: string): string {
   const envKey = (process.env.ENCRYPTION_KEY || '').trim();
   if (envKey) {
     if (/^[0-9a-fA-F]{64}$/.test(envKey)) {
@@ -75,17 +81,27 @@ function resolveEncryptionKey(): string {
     return crypto.createHash('sha256').update(envKey).digest('hex');
   }
 
-  // Fallback: derive 32-byte key from JWT_SECRET so server never crashes on missing key
-  const secret = process.env.JWT_SECRET || 'nommable-default-secret-key-change-this';
-  return crypto.createHash('sha256').update(secret).digest('hex');
+  // Fallback: derive 32-byte key from auth secret so server never crashes on missing key
+  return crypto.createHash('sha256').update(authSecret).digest('hex');
 }
 
 function resolveUploadDir(): string {
   const envDir = (process.env.UPLOAD_DIR || '').trim();
   if (envDir) return envDir;
+  if (fs.existsSync('/data/uploads')) return '/data/uploads';
   if (fs.existsSync('/app/uploads')) return '/app/uploads';
   return path.join(process.cwd(), 'uploads');
 }
+
+function resolveDatabasePath(): string {
+  const envPath = (process.env.DB_PATH || '').trim();
+  if (envPath) return envPath;
+  // Single-container default: persistent volume mounted at /data
+  if (fs.existsSync('/data')) return '/data/nommable.db';
+  return path.join(process.cwd(), 'nommable.db');
+}
+
+const authSecret = resolveAuthSecret();
 
 export const config: Config = {
   env: process.env.NODE_ENV || 'development',
@@ -93,23 +109,11 @@ export const config: Config = {
   host: process.env.HOST || 'localhost',
 
   database: {
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    name: process.env.DATABASE_NAME || 'nommable',
-    user: process.env.DATABASE_USER || 'nommable',
-    password: process.env.DATABASE_PASSWORD || 'nommable_password',
-    // Auto-build schema from entities. Explicit DB_SYNCHRONIZE wins; otherwise
-    // default to on outside production so fresh installs work with zero config.
-    // Set DB_SYNCHRONIZE=false when using a managed DB driven by migrations.
-    synchronize:
-      process.env.DB_SYNCHRONIZE !== undefined
-        ? process.env.DB_SYNCHRONIZE === 'true'
-        : (process.env.NODE_ENV || 'development') !== 'production',
+    path: resolveDatabasePath(),
   },
 
-  jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key-change-this',
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  auth: {
+    secret: authSecret,
   },
 
   admin: {
@@ -142,7 +146,7 @@ export const config: Config = {
   },
 
   encryption: {
-    key: resolveEncryptionKey(),
+    key: resolveEncryptionKey(authSecret),
   },
   smtp: {
     host: process.env.SMTP_HOST || undefined,
@@ -154,25 +158,25 @@ export const config: Config = {
   },
 };
 
-// --- Fail-closed production guards (security-fixes) ---
+// --- Fail-closed production guards ---
 // These run after config resolution so dev stays frictionless while prod
 // refuses to boot with insecure defaults.
 
-// ENCRYPTION_KEY must be explicitly set in production. Note: we check the raw
-// env var, not the resolved value, because resolveEncryptionKey() derives a
-// fallback from JWT_SECRET — running prod on a derived key is exactly what
-// this guard prevents.
-if (config.env === 'production' && !process.env.ENCRYPTION_KEY) {
-  console.error('FATAL: ENCRYPTION_KEY is required in production. Set a 64-character hex string.');
-  process.exit(1);
-}
-// JWT_SECRET must never fall back to the insecure default in production —
+// Auth secret must never fall back to the insecure default in production —
 // anyone with the default can forge valid session tokens.
 if (
   config.env === 'production' &&
-  (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your-secret-key-change-this')
+  authSecret === 'nommable-dev-secret-key-change-this-in-production'
 ) {
-  console.error('FATAL: JWT_SECRET is required in production. Set a long random string.');
+  console.error('FATAL: BETTER_AUTH_SECRET (or JWT_SECRET as legacy alias) is required in production. Set a long random string.');
+  process.exit(1);
+}
+// ENCRYPTION_KEY must be explicitly set in production. Note: we check the raw
+// env var, not the resolved value, because resolveEncryptionKey() derives a
+// fallback from the auth secret — running prod on a derived key is exactly what
+// this guard prevents.
+if (config.env === 'production' && !process.env.ENCRYPTION_KEY) {
+  console.error('FATAL: ENCRYPTION_KEY is required in production. Set a 64-character hex string.');
   process.exit(1);
 }
 // Same for the seeded admin password: shipping admin/admin is an open door.
@@ -182,5 +186,5 @@ if (config.env === 'production' && config.admin.password === 'admin') {
 }
 
 if (!process.env.ENCRYPTION_KEY) {
-  console.warn('NOTICE: ENCRYPTION_KEY not explicitly set. Using derived key from JWT_SECRET.');
+  console.warn('NOTICE: ENCRYPTION_KEY not explicitly set. Using derived key from auth secret.');
 }

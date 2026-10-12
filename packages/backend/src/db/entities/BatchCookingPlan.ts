@@ -68,7 +68,7 @@ export class BatchCookingPlan {
   status!: 'planned' | 'in-progress' | 'completed';
 
   // Prep checklist (JSON array of tasks)
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   prepChecklist?: Array<{
     task: string;
     completed: boolean;

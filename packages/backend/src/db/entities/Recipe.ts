@@ -49,16 +49,16 @@ export class Recipe {
   @Column('text', { nullable: true })
   notes?: string;
 
-  @Column('jsonb', { nullable: true })
+  @Column('simple-json', { nullable: true })
   instructions?: string[];
 
-  @Column('jsonb', { nullable: true })
+  @Column('simple-json', { nullable: true })
   categories?: string[];
 
-  @Column('jsonb', { nullable: true })
+  @Column('simple-json', { nullable: true })
   tags?: string[];
 
-  @Column('jsonb', { nullable: true })
+  @Column('simple-json', { nullable: true })
   nutrition?: {
     calories?: number;
     protein?: number;
