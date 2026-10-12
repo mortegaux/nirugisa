@@ -30,7 +30,7 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8765}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8992}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set (64 hex chars)}
       UPLOAD_DIR: /data/uploads
       SMTP_HOST: ${SMTP_HOST:-}
@@ -40,7 +40,7 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-no-reply@nommable.local}
     ports:
-      - '8765:3001'
+      - '${HOST_PORT:-8992}:3001'
     volumes:
       - nommable_data:/data
     restart: unless-stopped
