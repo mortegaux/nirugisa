@@ -3,7 +3,7 @@ import { aiApi } from '@/services/api';
 import { invalidateAIStatus } from '@/hooks/useAIStatus';
 import type { AIProvider, AIModelInfo, AIMode } from '@nommable/shared';
 
-export default function AISettingsPage() {
+export default function AISettingsPage({ hideHeader = false }: { hideHeader?: boolean }) {
   const [provider, setProvider] = useState<AIProvider>('openai');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
@@ -230,8 +230,8 @@ export default function AISettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-3xl font-bold text-foreground">AI Settings</h1>
+    <div className={hideHeader ? '' : 'mx-auto max-w-2xl'}>
+      {!hideHeader && <h1 className="mb-6 text-3xl font-bold text-foreground">AI Settings</h1>}
 
       <div className="rounded-lg bg-card border border-border p-6 shadow-sm">
         <p className="mb-6 text-muted-foreground">
