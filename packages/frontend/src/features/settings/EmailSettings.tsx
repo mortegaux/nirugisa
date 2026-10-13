@@ -246,12 +246,12 @@ export function EmailSettings({ onSaved, compact = false }: EmailSettingsProps) 
 
         <div className="flex items-center gap-2">
           {isConfigured ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 dark:text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
               SMTP Configured ({source === 'env' ? 'Environment' : 'Database'})
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 dark:text-amber-400 border border-amber-500/20">
               <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
               SMTP Not Configured
             </span>
@@ -264,7 +264,7 @@ export function EmailSettings({ onSaved, compact = false }: EmailSettingsProps) 
         <div
           className={`flex items-start gap-2.5 p-3.5 rounded-xl border text-xs leading-relaxed ${
             feedback.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300 dark:text-emerald-400'
               : 'bg-destructive/10 border-destructive/20 text-destructive'
           }`}
         >
@@ -420,7 +420,7 @@ export function EmailSettings({ onSaved, compact = false }: EmailSettingsProps) 
                 SMTP Password / App Password
               </label>
               {hasSavedPassword && !clearPassword && (
-                <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 dark:text-emerald-400">
                   Saved in database (encrypted)
                 </span>
               )}
