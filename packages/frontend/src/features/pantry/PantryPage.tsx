@@ -191,14 +191,14 @@ export default function PantryPage() {
         <div className="grid gap-4 md:grid-cols-2 mb-6">
           {/* Expiring Items Alert */}
           {expiringItems.length > 0 && (
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <span className="text-2xl">⏰</span>
                 <div className="flex-1">
                   <h3 className="font-semibold text-amber-900 mb-1">
                     {expiringItems.length} items expiring soon
                   </h3>
-                  <ul className="text-sm text-amber-800 space-y-1">
+                  <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
                     {expiringItems.slice(0, 3).map(item => {
                       const days = getDaysUntilExpiration(item.expirationDate);
                       return (
@@ -218,14 +218,14 @@ export default function PantryPage() {
 
           {/* Low Stock Alert */}
           {lowStockItems.length > 0 && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <BarChartIcon size={24} className="text-red-600" />
+                <BarChartIcon size={24} className="text-red-600 dark:text-red-400" />
                 <div className="flex-1">
                   <h3 className="font-semibold text-red-900 mb-1">
                     {lowStockItems.length} items running low
                   </h3>
-                  <ul className="text-sm text-red-800 space-y-1">
+                  <ul className="text-sm text-red-800 dark:text-red-200 space-y-1">
                     {lowStockItems.slice(0, 3).map(item => (
                       <li key={item.id}>
                         {item.name} - {item.quantity} {item.unit}
@@ -449,9 +449,9 @@ export default function PantryPage() {
                           isExpired
                             ? 'bg-destructive/5'
                             : isExpiringSoon
-                            ? 'bg-amber-50'
+                            ? 'bg-amber-50 dark:bg-amber-900/20'
                             : item.isLowStock
-                            ? 'bg-red-50'
+                            ? 'bg-red-50 dark:bg-red-900/20'
                             : 'bg-background'
                         }`}
                       >
@@ -483,7 +483,7 @@ export default function PantryPage() {
                             {expiryLabel && (
                               <>
                                 <span aria-hidden="true">·</span>
-                                <span className={`whitespace-nowrap ${isExpired ? 'text-destructive font-medium' : isExpiringSoon ? 'text-amber-700 font-medium' : ''}`}>
+                                <span className={`whitespace-nowrap ${isExpired ? 'text-destructive font-medium' : isExpiringSoon ? 'text-amber-700 dark:text-amber-300 font-medium' : ''}`}>
                                   {expiryLabel}
                                 </span>
                               </>
@@ -491,7 +491,7 @@ export default function PantryPage() {
                             {item.isLowStock && (
                               <>
                                 <span aria-hidden="true">·</span>
-                                <span className="whitespace-nowrap text-red-600 font-medium">Low stock</span>
+                                <span className="whitespace-nowrap text-red-600 dark:text-red-400 font-medium">Low stock</span>
                               </>
                             )}
                             {item.notes && (
