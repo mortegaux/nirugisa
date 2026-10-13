@@ -207,7 +207,10 @@ export default function MealPlansPage() {
     <>
       <div>
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-3xl font-bold text-foreground">Meal Plans</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Meal Plans</h1>
+            <p className="text-muted-foreground mt-1">{total}{' '}meal plan{total === 1 ? '' : 's'}</p>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowTemplates(true)}
