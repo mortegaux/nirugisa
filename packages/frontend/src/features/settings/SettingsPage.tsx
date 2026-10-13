@@ -9,28 +9,26 @@ import PreferencesPage from '@/features/preferences/PreferencesPage';
 import AISettingsPage from '@/features/ai/AISettingsPage';
 import UserAIKeySettings from './UserAIKeySettings';
 
-type Tab = 'account' | 'preferences' | 'aikey' | 'ai' | 'users' | 'email' | 'data';
+type Tab = 'account' | 'preferences' | 'ai' | 'users' | 'email' | 'data';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [searchParams] = useSearchParams();
   // Deep link support: /settings?tab=ai opens the AI tab directly.
   // Used by the AI setup CTA when AI isn't configured yet.
-  const initialTab = (searchParams.get('tab') as Tab) || 'account';
-  // The AI Settings tab is admin-only — fall back to the BYOK key tab for
-  // non-admins hitting the deep link.
-  const safeInitialTab: Tab =
-    initialTab === 'ai' && user?.role !== 'admin' ? 'aikey' : initialTab;
-  const [activeTab, setActiveTab] = useState<Tab>(safeInitialTab);
+  // ('aikey' is a legacy alias from before the tabs were merged.)
+  const rawTab = searchParams.get('tab');
+  const initialTab: Tab = rawTab === 'aikey' ? 'ai' : (rawTab as Tab) || 'account';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
   const tabs = [
     { id: 'account' as Tab, label: 'Account', visible: true },
     { id: 'preferences' as Tab, label: 'Preferences', visible: true },
-    { id: 'aikey' as Tab, label: 'AI Key', visible: true },
-    { id: 'ai' as Tab, label: 'AI Settings', visible: user?.role === 'admin' },
-    { id: 'users' as Tab, label: 'User Management', visible: user?.role === 'admin' },
-    { id: 'email' as Tab, label: 'Email / SMTP', visible: user?.role === 'admin' },
-    { id: 'data' as Tab, label: 'Data Management', visible: user?.role === 'admin' },
+    { id: 'ai' as Tab, label: 'AI Settings', visible: true },
+    { id: 'users' as Tab, label: 'User Management', visible: isAdmin },
+    { id: 'email' as Tab, label: 'Email / SMTP', visible: isAdmin },
+    { id: 'data' as Tab, label: 'Data Management', visible: isAdmin },
   ];
 
   return (
@@ -63,11 +61,27 @@ export default function SettingsPage() {
         <div className="p-4 sm:p-6">
           {activeTab === 'account' && <AccountSettings />}
           {activeTab === 'preferences' && <PreferencesPage />}
-          {activeTab === 'aikey' && <UserAIKeySettings />}
-          {activeTab === 'ai' && <AISettingsPage />}
-          {activeTab === 'users' && user?.role === 'admin' && <UserManagement />}
-          {activeTab === 'email' && user?.role === 'admin' && <EmailSettings />}
-          {activeTab === 'data' && user?.role === 'admin' && <DataManagement />}
+          {activeTab === 'ai' && (
+            <div className="mx-auto max-w-2xl space-y-10">
+              {isAdmin && (
+                <section>
+                  <h2 className="mb-4 text-xl font-semibold text-foreground">
+                    Instance AI Settings
+                  </h2>
+                  <AISettingsPage hideHeader />
+                </section>
+              )}
+              <section>
+                <h2 className="mb-4 text-xl font-semibold text-foreground">
+                  {isAdmin ? 'Your Personal AI Key' : 'Your AI Key'}
+                </h2>
+                <UserAIKeySettings hideHeader />
+              </section>
+            </div>
+          )}
+          {activeTab === 'users' && isAdmin && <UserManagement />}
+          {activeTab === 'email' && isAdmin && <EmailSettings />}
+          {activeTab === 'data' && isAdmin && <DataManagement />}
         </div>
       </div>
     </div>
