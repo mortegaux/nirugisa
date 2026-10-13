@@ -159,8 +159,8 @@ export default function UserAIKeySettings({ hideHeader = false }: { hideHeader?:
           <div
             className={`mb-6 rounded p-3 border ${
               hasKey
-                ? 'bg-green-100 text-green-700 border-green-200'
-                : 'bg-amber-100 text-amber-800 border-amber-200'
+                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800'
+                : 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800'
             }`}
           >
             {hasKey ? (
@@ -177,8 +177,8 @@ export default function UserAIKeySettings({ hideHeader = false }: { hideHeader?:
             <div
               className={`mb-4 rounded p-3 ${
                 message.toLowerCase().includes('success') || message.toLowerCase().includes('saved') || message.toLowerCase().includes('removed')
-                  ? 'bg-green-100 text-green-700 border border-green-200'
-                  : 'bg-red-100 text-red-700 border border-red-200'
+                  ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                  : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
               }`}
             >
               {message}
@@ -189,8 +189,8 @@ export default function UserAIKeySettings({ hideHeader = false }: { hideHeader?:
             <div
               className={`mb-4 rounded p-3 ${
                 testResult.success
-                  ? 'bg-green-100 text-green-700 border border-green-200'
-                  : 'bg-red-100 text-red-700 border border-red-200'
+                  ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                  : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
               }`}
             >
               <div className="flex items-start gap-2">

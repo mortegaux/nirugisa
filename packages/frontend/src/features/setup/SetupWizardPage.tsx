@@ -199,7 +199,7 @@ export default function SetupWizardPage() {
                     isActive
                       ? 'border-primary bg-primary/10 text-primary font-semibold'
                       : isCompleted
-                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 dark:text-emerald-300'
                         : 'border-border bg-card text-muted-foreground'
                   }`}
                 >
@@ -714,7 +714,7 @@ export default function SetupWizardPage() {
           {/* STEP 5: COMPLETION SCREEN */}
           {step === 5 && (
             <div className="text-center py-6 space-y-5">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-2xl font-bold">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 dark:text-emerald-400 text-2xl font-bold">
                 ✓
               </div>
               <div>
