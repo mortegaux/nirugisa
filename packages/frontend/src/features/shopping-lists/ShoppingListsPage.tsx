@@ -462,8 +462,14 @@ export default function ShoppingListsPageEnhanced() {
       }
     }
 
+    // Update both states together from the same computed list. Setting
+    // selectedList to null and letting the auto-select effect re-pick would
+    // race: the effect fires with the stale shoppingLists (still containing
+    // the deleted list) before the reload completes, re-selecting it.
+    const remaining = shoppingLists.filter((l) => l.id !== listId);
+    setShoppingLists(remaining);
     if (selectedList?.id === listId) {
-      setSelectedList(null);
+      setSelectedList(remaining[0] ?? null);
     }
     await loadShoppingLists(page);
     toast.success('Shopping list deleted.');
@@ -654,7 +660,7 @@ export default function ShoppingListsPageEnhanced() {
   const progress = selectedList ? getProgress(selectedList.items) : 0;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold text-foreground">Shopping Lists</h1>
@@ -667,7 +673,7 @@ export default function ShoppingListsPageEnhanced() {
         </button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[250px_1fr]">
+      <div className="grid gap-4 md:grid-cols-[220px_1fr]">
         {/* Shopping List Selector */}
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -921,7 +927,7 @@ export default function ShoppingListsPageEnhanced() {
                   No items yet — add your first one above!
                 </div>
               ) : (
-                <>
+                <div className="lg:columns-2 lg:gap-4 [&>*]:lg:break-inside-avoid">
                   {groupedActive.map(([category, items]) => {
                     const collapsed = !!collapsedCategories[category];
                     return (
@@ -960,7 +966,7 @@ export default function ShoppingListsPageEnhanced() {
 
                   {/* Checked items sink into a collapsed "Completed" section */}
                   {completedItems.length > 0 && (
-                    <div className="mt-1 border-t border-border pt-1">
+                    <div className="mt-1 border-t border-border pt-1 break-inside-avoid">
                       <button
                         type="button"
                         onClick={() => setShowCompleted((v) => !v)}
@@ -987,7 +993,7 @@ export default function ShoppingListsPageEnhanced() {
                       )}
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
