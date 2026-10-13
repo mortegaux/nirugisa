@@ -284,11 +284,11 @@ export function MealPlanPreviewModal({ preview, onClose, onReplaceMeal, onManual
                                 {meal.mealType}
                               </span>
                               {meal.suggestion.type === 'existing' ? (
-                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
                                   Your Recipe
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                   New Recipe
                                 </span>
                               )}
@@ -307,7 +307,7 @@ export function MealPlanPreviewModal({ preview, onClose, onReplaceMeal, onManual
                                 <span>⏱️ {meal.suggestion.recipe.cookTime} min</span>
                               )}
                               {meal.suggestion.matchScore !== undefined && meal.suggestion.matchScore > 0 && (
-                                <span className="text-green-600 font-medium">
+                                <span className="text-green-600 dark:text-green-400 font-medium">
                                   ✓ {Math.round(meal.suggestion.matchScore * 100)}% ingredients available
                                 </span>
                               )}
