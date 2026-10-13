@@ -102,24 +102,24 @@ function MultiSelectDropdown({
 }
 
 const DIETARY_BADGES = {
-  'Vegetarian': { color: 'bg-green-100 text-green-800' },
-  'Vegan': { color: 'bg-green-100 text-green-800' },
-  'Gluten-Free': { color: 'bg-amber-100 text-amber-800' },
-  'Dairy-Free': { color: 'bg-blue-100 text-blue-800' },
-  'Low-Carb': { color: 'bg-purple-100 text-purple-800' },
-  'Keto': { color: 'bg-purple-100 text-purple-800' },
-  'Paleo': { color: 'bg-orange-100 text-orange-800' },
-  'Quick': { color: 'bg-red-100 text-red-800' },
-  'One-Pot': { color: 'bg-indigo-100 text-indigo-800' },
-  'Freezer-Friendly': { color: 'bg-cyan-100 text-cyan-800' },
-  'Kid-Friendly': { color: 'bg-pink-100 text-pink-800' },
-  'Healthy': { color: 'bg-emerald-100 text-emerald-800' },
+  'Vegetarian': { color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' },
+  'Vegan': { color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' },
+  'Gluten-Free': { color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200' },
+  'Dairy-Free': { color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200' },
+  'Low-Carb': { color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200' },
+  'Keto': { color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200' },
+  'Paleo': { color: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200' },
+  'Quick': { color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200' },
+  'One-Pot': { color: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200' },
+  'Freezer-Friendly': { color: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-200' },
+  'Kid-Friendly': { color: 'bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-200' },
+  'Healthy': { color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200' },
 };
 
 const DIFFICULTY_DISPLAY = {
-  'easy': { label: 'Easy', color: 'text-green-700', icon: '●' },
-  'medium': { label: 'Medium', color: 'text-amber-700', icon: '●●' },
-  'hard': { label: 'Hard', color: 'text-red-700', icon: '●●●' },
+  'easy': { label: 'Easy', color: 'text-green-700 dark:text-green-300', icon: '●' },
+  'medium': { label: 'Medium', color: 'text-amber-700 dark:text-amber-300', icon: '●●' },
+  'hard': { label: 'Hard', color: 'text-red-700 dark:text-red-300', icon: '●●●' },
 };
 
 // Helper function to format time display
@@ -821,7 +821,7 @@ export default function RecipesPage() {
 
       {/* Suggested from your pantry (hidden while filtering/searching) */}
       {!hasActiveFilters && suggestions.length > 0 && showSuggestions && (
-        <section aria-label="Suggested from your pantry" className="mb-8 rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 sm:p-5">
+        <section aria-label="Suggested from your pantry" className="mb-8 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-600 text-white shadow-sm" aria-hidden="true">
@@ -829,12 +829,12 @@ export default function RecipesPage() {
               </span>
               <div>
                 <h2 className="text-lg font-semibold text-emerald-950">Suggested from your pantry</h2>
-                <p className="text-xs text-emerald-800">Recipes you can cook with what's on hand</p>
+                <p className="text-xs text-emerald-800 dark:text-emerald-200">Recipes you can cook with what's on hand</p>
               </div>
             </div>
             <button
               onClick={() => setShowSuggestions(false)}
-              className="text-sm text-emerald-800 hover:text-emerald-950 underline underline-offset-2 flex-shrink-0 ml-2"
+              className="text-sm text-emerald-800 dark:text-emerald-200 hover:text-emerald-950 underline underline-offset-2 flex-shrink-0 ml-2"
             >
               Hide
             </button>
@@ -844,7 +844,7 @@ export default function RecipesPage() {
               const pantryMatch = parsePantryMatch(matchReason);
               return (
                 <Link key={recipe.id} to={`/recipes/${recipe.id}`}>
-                  <div className="border-2 border-emerald-300 border-l-4 border-l-emerald-500 rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-card">
+                  <div className="border-2 border-emerald-300 dark:border-emerald-700 border-l-4 border-l-emerald-500 rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-card">
                     {recipe.imageUrl ? (
                       <img
                         src={
@@ -856,7 +856,7 @@ export default function RecipesPage() {
                         className="w-full h-36 object-cover"
                       />
                     ) : (
-                      <div className="w-full h-36 bg-emerald-100/60 flex items-center justify-center text-emerald-700 text-3xl">
+                      <div className="w-full h-36 bg-emerald-100 dark:bg-emerald-900/40/60 flex items-center justify-center text-emerald-700 dark:text-emerald-300 text-3xl">
                         🍳
                       </div>
                     )}
