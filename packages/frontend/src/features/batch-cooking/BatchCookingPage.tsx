@@ -55,8 +55,8 @@ const STORAGE_ICONS = {
 };
 
 const STATUS_COLORS = {
-  planned: 'bg-blue-100 text-blue-800 border-blue-300',
-  'in-progress': 'bg-amber-100 text-amber-800 border-amber-300',
+  planned: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700',
+  'in-progress': 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700',
   completed: 'bg-secondary/10 text-secondary-foreground border-secondary/20',
 };
 
