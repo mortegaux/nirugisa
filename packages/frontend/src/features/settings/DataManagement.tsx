@@ -187,7 +187,7 @@ export function DataManagement() {
         )}
 
         {success && (
-          <div className="mb-4 flex items-center gap-2 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-xl">
+          <div className="mb-4 flex items-center gap-2 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 dark:text-emerald-400 text-xs font-medium rounded-xl">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
             <span>{success}</span>
           </div>
@@ -208,8 +208,8 @@ export function DataManagement() {
             <span
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-auto ${
                 anySharedEnabled
-                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 dark:text-amber-400 border border-amber-500/20'
               }`}
             >
               {anySharedEnabled ? (
