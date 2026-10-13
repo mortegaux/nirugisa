@@ -2,6 +2,9 @@
 
 A self-hosted recipe management system with optional AI features powered by multiple providers (OpenAI, Anthropic, Google AI, Ollama).
 
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https%3A%2F%2Fgithub.com%2Fmortegaux%2Fnommable&envs=BETTER_AUTH_SECRET%2CENCRYPTION_KEY%2CDB_PATH&DB_PATHDefault=%2Fdata%2Fnommable.db&BETTER_AUTH_SECRETDesc=Session+signing+secret+%2832%2B+random+chars%29&ENCRYPTION_KEYDesc=Encryption+key+for+stored+API+keys+%2864+hex+chars+or+random+string%29)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mortegaux/nommable)
+
 ## Features
 
 - **Recipe Management & Collections**: Create, import, and organize recipes into custom collections or Favorites using searchable multi-select dialogs (`Add Recipes` from collection pages or bulk `Add to Collection` from the Recipes page)
@@ -85,16 +88,23 @@ A self-hosted recipe management system with optional AI features powered by mult
 
 ```bash
 cp .env.example .env
-# Edit .env — set BETTER_AUTH_SECRET, ENCRYPTION_KEY, ADMIN_PASSWORD
+# Edit .env — set BETTER_AUTH_SECRET, ENCRYPTION_KEY
 docker compose up -d
 ```
 
 One container, one volume (`/data` holds the SQLite database + uploads), one port.
 
-- App: http://localhost:8765 (API at `/api`)
+- App: http://localhost:8992 (API at `/api`, first-run onboarding wizard at `/setup`)
 
 Secrets are never committed — `docker-compose.yml` reads them from a gitignored `.env` file
 (or from Portainer stack environment variables).
+
+### One-Click Cloud Deployment
+
+Deploy a single-container instance with persistent `/data` storage on Railway or Render:
+
+- **Railway**: Uses [`railway.json`](./railway.json) — attach a volume mounted at `/data` and set `BETTER_AUTH_SECRET` and `ENCRYPTION_KEY`.
+- **Render**: Uses [`render.yaml`](./render.yaml) — automatically provisions a 5 GB persistent disk at `/data` and generates `BETTER_AUTH_SECRET` and `ENCRYPTION_KEY`.
 
 ## AI Configuration
 

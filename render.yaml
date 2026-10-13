@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: nommable
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: nommable-data
+      mountPath: /data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3001
+      - key: DB_PATH
+        value: /data/nommable.db
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
