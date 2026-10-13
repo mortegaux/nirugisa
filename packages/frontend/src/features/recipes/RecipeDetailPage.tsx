@@ -25,24 +25,24 @@ import {
 import type { Recipe, Taxonomy } from '@nommable/shared';
 
 const DIETARY_BADGES = {
-  'Vegetarian': { color: 'bg-green-100 text-green-800 border-green-200' },
-  'Vegan': { color: 'bg-green-100 text-green-800 border-green-200' },
-  'Gluten-Free': { color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  'Dairy-Free': { color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  'Low-Carb': { color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  'Keto': { color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  'Paleo': { color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  'Quick': { color: 'bg-red-100 text-red-800 border-red-200' },
-  'One-Pot': { color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  'Freezer-Friendly': { color: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
-  'Kid-Friendly': { color: 'bg-pink-100 text-pink-800 border-pink-200' },
-  'Healthy': { color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  'Vegetarian': { color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' },
+  'Vegan': { color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' },
+  'Gluten-Free': { color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800' },
+  'Dairy-Free': { color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800' },
+  'Low-Carb': { color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800' },
+  'Keto': { color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800' },
+  'Paleo': { color: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800' },
+  'Quick': { color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800' },
+  'One-Pot': { color: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800' },
+  'Freezer-Friendly': { color: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-200 border-cyan-200 dark:border-cyan-800' },
+  'Kid-Friendly': { color: 'bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-200 border-pink-200 dark:border-pink-800' },
+  'Healthy': { color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800' },
 };
 
 const DIFFICULTY_CONFIG = {
-  easy: { label: 'Easy', color: 'text-green-700 bg-green-50 border-green-200' },
-  medium: { label: 'Medium', color: 'text-amber-700 bg-amber-50 border-amber-200' },
-  hard: { label: 'Hard', color: 'text-red-700 bg-red-50 border-red-200' },
+  easy: { label: 'Easy', color: 'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' },
+  medium: { label: 'Medium', color: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' },
+  hard: { label: 'Hard', color: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' },
 };
 
 export default function RecipeDetailPage() {
