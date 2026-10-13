@@ -32,14 +32,14 @@ type TypeFilter = 'all' | FeedbackType;
 type StatusFilter = 'all' | FeedbackStatus;
 
 const TYPE_BADGE: Record<FeedbackType, string> = {
-  bug: 'bg-red-100 text-red-800 border-red-300',
-  feature: 'bg-blue-100 text-blue-800 border-blue-300',
+  bug: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700',
+  feature: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700',
 };
 
 const STATUS_BADGE: Record<FeedbackStatus, string> = {
-  open: 'bg-amber-100 text-amber-800 border-amber-300',
-  'in-progress': 'bg-violet-100 text-violet-800 border-violet-300',
-  resolved: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+  open: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700',
+  'in-progress': 'bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-200 border-violet-300 dark:border-violet-700',
+  resolved: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700',
 };
 
 const STATUS_LABEL: Record<FeedbackStatus, string> = {
