@@ -1,0 +1,24 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: nommable_web_1
+      APP_PORT: 3001
+      PROXY_AUTH_ADD: "false"
+
+  web:
+    image: ghcr.io/mortegaux/nommable:1.0.0
+    restart: on-failure
+    stop_grace_period: 1m
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3001
+      DB_PATH: /data/nommable.db
+      UPLOAD_DIR: /data/uploads
+      BETTER_AUTH_SECRET: ${APP_SEED}
+      ENCRYPTION_KEY: ${APP_PASSWORD}
+      CORS_ORIGIN: http://${DEVICE_DOMAIN_NAME}:8992
+    volumes:
+      - ${APP_DATA_DIR}/data:/data

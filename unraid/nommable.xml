@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Nommable</Name>
+  <Repository>ghcr.io/mortegaux/nommable:latest</Repository>
+  <Registry>https://github.com/mortegaux/nommable/pkgs/container/nommable</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/mortegaux/nommable/issues</Support>
+  <Project>https://github.com/mortegaux/nommable</Project>
+  <Overview>Nommable is a self-hosted recipe management system, meal planner, smart shopping list, pantry tracker, and batch cooking assistant running in a single container with SQLite storage and optional BYOK AI features. On first launch, visit /setup to complete the 5-step onboarding wizard.</Overview>
+  <Category>Productivity: Tools: HomeAutomation:</Category>
+  <WebUI>http://[IP]:[PORT:8992]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/mortegaux/nommable/main/unraid/nommable.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/mortegaux/nommable/main/packages/frontend/public/logo.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config
+    Name="WebUI Port"
+    Target="3001"
+    Default="8992"
+    Mode="tcp"
+    Description="Host port for the Nommable web interface and API (container listens on 3001)."
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">8992</Config>
+  <Config
+    Name="App Data (/data)"
+    Target="/data"
+    Default="/mnt/user/appdata/nommable"
+    Mode="rw"
+    Description="Persistent storage for the SQLite database (/data/nommable.db) and uploaded recipe images (/data/uploads)."
+    Type="Path"
+    Display="always"
+    Required="true"
+    Mask="false">/mnt/user/appdata/nommable</Config>
+  <Config
+    Name="BETTER_AUTH_SECRET"
+    Target="BETTER_AUTH_SECRET"
+    Default=""
+    Mode=""
+    Description="Required secret for signing Better Auth user sessions (32+ random characters; generate with: openssl rand -hex 32)."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"/>
+  <Config
+    Name="ENCRYPTION_KEY"
+    Target="ENCRYPTION_KEY"
+    Default=""
+    Mode=""
+    Description="Required 64-character hex key (32 bytes) for AES-256-GCM encryption of stored AI API keys and SMTP credentials (generate with: openssl rand -hex 32)."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"/>
+  <Config
+    Name="CORS_ORIGIN"
+    Target="CORS_ORIGIN"
+    Default="http://localhost:8992"
+    Mode=""
+    Description="Allowed origin URL for browser requests (set to your Unraid server URL or reverse-proxy domain, e.g. http://192.168.1.50:8992)."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">http://localhost:8992</Config>
+  <Config
+    Name="DB_PATH"
+    Target="DB_PATH"
+    Default="/data/nommable.db"
+    Mode=""
+    Description="Path to the SQLite database file inside the container."
+    Type="Variable"
+    Display="advanced"
+    Required="true"
+    Mask="false">/data/nommable.db</Config>
+  <Config
+    Name="UPLOAD_DIR"
+    Target="UPLOAD_DIR"
+    Default="/data/uploads"
+    Mode=""
+    Description="Directory for uploaded recipe photos inside the container."
+    Type="Variable"
+    Display="advanced"
+    Required="true"
+    Mask="false">/data/uploads</Config>
+</Container>

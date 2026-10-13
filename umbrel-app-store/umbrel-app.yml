@@ -1,0 +1,44 @@
+manifestVersion: 1
+id: nommable
+category: files
+name: Nommable
+version: "1.0.0"
+tagline: Self-hosted recipe manager, meal planner, pantry tracker & smart kitchen assistant
+icon: https://raw.githubusercontent.com/mortegaux/nommable/main/packages/frontend/public/logo.png
+description: >-
+  Nommable is a self-hosted recipe management and kitchen organization platform built to run in a
+  single lightweight container backed by SQLite.
+
+
+  ✨ Features
+
+  - Recipe Library & Collections: Import recipes from 600+ cooking websites or raw pasted text, organize into collections, and scale servings on the fly.
+
+  - Interactive Cooking Mode: Step-by-step full-screen cooking view with built-in timers and ingredient checklists.
+
+  - Weekly Meal Planner & Templates: Drag-and-drop calendar across Breakfast, Lunch, Dinner, and Snack slots with reusable weekly templates.
+
+  - Smart Shopping Lists: Auto-generate grocery lists from meal plans with automatic aisle categorization (~180 common items) and quick-add chips.
+
+  - Pantry Inventory & Suggestions: Track stock levels, expiration dates, and see recipes ranked by how many pantry ingredients they use.
+
+  - Batch Cooking Wizard: Plan multi-recipe prep sessions with consolidated timelines and checklists.
+
+  - Granular Household Sharing: Choose Shared Library mode (with optional recipe creator attribution) or Per-User Private Library mode during the first-run setup wizard (/setup).
+
+  - Optional BYOK AI: Bring your own API key (Google Gemini, OpenAI, Anthropic, or local Ollama) for recipe generation, ingredient substitutions, and AI food photography.
+developer: Nommable
+website: https://github.com/mortegaux/nommable
+dependencies: []
+repo: https://github.com/mortegaux/nommable
+support: https://github.com/mortegaux/nommable/issues
+port: 8992
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+releaseNotes: >-
+  Initial Umbrel release of Nommable 1.0.0 featuring single-container SQLite storage, Better Auth
+  sessions, and the 5-step first-run onboarding wizard (/setup).
+submitter: mortegaux
+submission: https://github.com/mortegaux/nommable
