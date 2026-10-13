@@ -316,9 +316,9 @@ export function CreateBatchSessionModal({ onClose, onSuccess }: CreateBatchSessi
             <div className="space-y-4">
               {/* Tag bootstrapping: one-time setup when nothing is tagged */}
               {!loading && taggedCount === 0 && (
-                <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 dark:bg-amber-950/30 dark:border-amber-800">
                   <div className="flex items-start gap-3">
-                    <Tag className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <Tag className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="font-medium text-foreground">
                         No recipes tagged for batch cooking yet — select recipes to tag
