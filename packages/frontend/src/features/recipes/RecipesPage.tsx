@@ -1026,13 +1026,13 @@ export default function RecipesPage() {
                         {recipe.categories.slice(0, 2).map(category => (
                           <span
                             key={category}
-                            className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                            className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/15 text-primary border border-primary/30"
                           >
                             {category}
                           </span>
                         ))}
                         {recipe.categories.length > 2 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-foreground">
                             +{recipe.categories.length - 2}
                           </span>
                         )}
@@ -1048,7 +1048,7 @@ export default function RecipesPage() {
                             <span
                               key={tag}
                               className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
-                                badge ? badge.color : 'bg-secondary/10 text-secondary-foreground border border-border'
+                                badge ? badge.color : 'bg-muted text-foreground border border-border'
                               }`}
                             >
                               {tag}
@@ -1056,7 +1056,7 @@ export default function RecipesPage() {
                           );
                         })}
                         {recipeTags.length > 3 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-foreground">
                             +{recipeTags.length - 3}
                           </span>
                         )}

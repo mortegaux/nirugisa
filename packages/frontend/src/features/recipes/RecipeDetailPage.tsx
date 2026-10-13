@@ -379,7 +379,7 @@ export default function RecipeDetailPage() {
   const sortedTags = [...visibleTags].sort((a, b) => {
     return Number(isAutoCuisineTag(a)) - Number(isAutoCuisineTag(b));
   });
-  const TAG_COLLAPSE_LIMIT = 6;
+  const TAG_COLLAPSE_LIMIT = 4;
   const displayedTags = showAllTags ? sortedTags : sortedTags.slice(0, TAG_COLLAPSE_LIMIT);
   const hiddenTagCount = sortedTags.length - displayedTags.length;
   const allAvailableTags = Array.from(new Set([...taxonomyTags, ...Object.keys(DIETARY_BADGES)]));
@@ -873,7 +873,7 @@ export default function RecipeDetailPage() {
           {recipe.categories?.map(cat => (
             <span
               key={`cat-${cat}`}
-              className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-secondary/10 text-secondary border border-secondary/20"
+              className="group inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/15 text-primary border border-primary/30"
             >
               <span>{cat}</span>
               <button
@@ -884,7 +884,7 @@ export default function RecipeDetailPage() {
                 title={`Remove category "${cat}"`}
                 aria-label={`Remove category ${cat}`}
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             </span>
           ))}
@@ -895,11 +895,11 @@ export default function RecipeDetailPage() {
               ? badge.color
               : isAuto
                 ? 'bg-muted/50 text-muted-foreground border-border/50 text-xs opacity-80'
-                : 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary-foreground';
+                : 'bg-muted text-foreground border-border';
             return (
               <span
                 key={`tag-${tag}`}
-                className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${colorClass}`}
+                className={`group inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${colorClass}`}
               >
                 <span>{tag}</span>
                 <button
@@ -910,7 +910,7 @@ export default function RecipeDetailPage() {
                   title={`Remove tag "${tag}"`}
                   aria-label={`Remove tag ${tag}`}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               </span>
             );
@@ -919,7 +919,7 @@ export default function RecipeDetailPage() {
             <button
               type="button"
               onClick={() => setShowAllTags(true)}
-              className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-accent/50 transition-colors"
+              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-accent/50 transition-colors"
               aria-label={`Show ${hiddenTagCount} more tags`}
             >
               +{hiddenTagCount} more
@@ -929,7 +929,7 @@ export default function RecipeDetailPage() {
             <button
               type="button"
               onClick={() => setShowAllTags(false)}
-              className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-accent/50 transition-colors"
+              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-accent/50 transition-colors"
             >
               Show less
             </button>
