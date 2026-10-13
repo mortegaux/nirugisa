@@ -8,6 +8,7 @@ import { TemplatesModal } from './TemplatesModal';
 import { AutoAwesomeIcon } from '@/components/icons/MaterialIcon';
 import { AIConfigAlert } from '@/components/AIConfigAlert';
 import { checkAIConfiguration, aiUnavailableMessage } from '@/utils/aiValidation';
+import { useAIStatus, aiNotConfiguredClass, AISetupBadge } from '@/hooks/useAIStatus';
 import { Pagination } from '@/components/Pagination';
 import { useToastStore } from '@/store/toast.store';
 import { useConfirmStore } from '@/store/confirm.store';
@@ -18,6 +19,8 @@ export default function MealPlansPage() {
   const [loading, setLoading] = useState(true);
   const [showAIGenerate, setShowAIGenerate] = useState(false);
   const [showIntelligentGenerate, setShowIntelligentGenerate] = useState(false);
+  const { isReady: aiReady, isLoading: aiLoading } = useAIStatus();
+  const aiNeedsSetup = !aiReady && !aiLoading;
   const [showTemplates, setShowTemplates] = useState(false);
   const [preview, setPreview] = useState<MealPlanPreview | null>(null);
   const toast = useToastStore();
@@ -223,11 +226,13 @@ export default function MealPlansPage() {
             </button>
             <button
               onClick={handleSmartGenerateClick}
-              className="rounded-lg border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-accent shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center gap-2"
+              className={`rounded-lg border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-accent shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center gap-2 ${aiNeedsSetup ? aiNotConfiguredClass : ''}`}
               aria-label="Generate intelligent meal plan"
+              title={aiNeedsSetup ? 'Set up AI to unlock smart meal planning' : undefined}
             >
               <AutoAwesomeIcon size={18} />
               Smart Generate
+              {aiNeedsSetup && <AISetupBadge />}
             </button>
             <Link
               to="/meal-plans/new"
