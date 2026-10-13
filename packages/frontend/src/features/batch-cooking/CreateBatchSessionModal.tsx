@@ -66,7 +66,7 @@ export function CreateBatchSessionModal({ onClose, onSuccess }: CreateBatchSessi
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [sessionName, setSessionName] = useState('Batch Cooking Session');
+  const [sessionName, setSessionName] = useState('Batch Cook');
   const [cookingDate, setCookingDate] = useState(todayLocalDateKey());
   const [storageMethod, setStorageMethod] = useState<'refrigerate' | 'freeze' | 'pantry'>('freeze');
 
@@ -278,7 +278,7 @@ export function CreateBatchSessionModal({ onClose, onSuccess }: CreateBatchSessi
   };
 
   return (
-    <Dialog title="New Batch Cooking Session" onClose={onClose} panelClassName="max-w-3xl">
+    <Dialog title="New Batch Cook" onClose={onClose} panelClassName="max-w-3xl">
       <div className="p-6">
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6" aria-label="Session setup progress">

@@ -281,13 +281,13 @@ export default function BatchCookingPage() {
       {/* Plans Tab */}
       {activeTab === 'plans' && (
         <div className="space-y-6">
-          {/* Create New Plan Button */}
+          {/* Create New Plan Button — the primary action on this page */}
           <button
             onClick={() => setShowSessionModal(true)}
-            className="w-full py-4 rounded-xl border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary font-medium"
+            className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-medium shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center justify-center gap-2"
           >
             <span className="text-2xl">+</span>
-            Start a Batch Cooking Session
+            Create a Batch Cook
           </button>
 
           {/* Bulk Actions Bar */}
@@ -342,7 +342,7 @@ export default function BatchCookingPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('suggestions')}
-                className="mt-4 rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="mt-4 rounded-lg border border-border bg-background px-4 py-2 font-medium text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               >
                 View Suggestions
               </button>
