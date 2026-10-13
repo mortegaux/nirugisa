@@ -82,10 +82,10 @@ interface MealHistoryItem {
 }
 
 const MEAL_TYPE_COLORS = {
-  breakfast: 'bg-amber-100 text-amber-800 border-amber-300',
-  lunch: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+  breakfast: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700',
+  lunch: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700',
   dinner: 'bg-coral-100 text-coral-800 border-coral-300',
-  snack: 'bg-purple-100 text-purple-800 border-purple-300',
+  snack: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-700',
 };
 
 const MEAL_TYPE_ICONS = {
@@ -428,19 +428,19 @@ export default function AnalyticsPage() {
                   <div className="text-sm text-muted-foreground">Protein</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-amber-600">
+                  <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
                     {Math.round(analytics.nutritionTrends.averageCarbs)}g
                   </div>
                   <div className="text-sm text-muted-foreground">Carbs</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-orange-600">
+                  <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                     {Math.round(analytics.nutritionTrends.averageFat)}g
                   </div>
                   <div className="text-sm text-muted-foreground">Fat</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-emerald-600">
+                  <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                     {Math.round(analytics.nutritionTrends.averageFiber)}g
                   </div>
                   <div className="text-sm text-muted-foreground">Fiber</div>
