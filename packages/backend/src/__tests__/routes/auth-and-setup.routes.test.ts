@@ -5,6 +5,7 @@ import { EmailService } from '../../services/email/email.service';
 import { AppDataSource } from '../../db/data-source';
 import { AIConfig } from '../../db/entities';
 import { safeDecrypt } from '../../utils/crypto';
+import { buildAnonymizedFeedbackPayload } from '../../api/controllers/feedback.controller';
 
 const app = createApp();
 
@@ -166,7 +167,55 @@ describe('Onboarding Wizard (/api/setup) & Better Auth Session Flows', () => {
       expect(allowedUsersRes.status).toBe(200);
       expect(Array.isArray(allowedUsersRes.body.users || allowedUsersRes.body)).toBe(true);
 
-      // 7. Logout revokes the Better Auth session token
+      // 7. Feedback developer-forwarding opt-in defaults to false and only admin can toggle it
+      const defaultGeneralRes = await request(app)
+        .get('/api/settings/general')
+        .set('Authorization', `Bearer ${memberToken}`);
+      expect(defaultGeneralRes.status).toBe(200);
+      expect(defaultGeneralRes.body.shareAnonymousFeedback).toBe(false);
+
+      const memberToggleRes = await request(app)
+        .put('/api/settings/general')
+        .set('Authorization', `Bearer ${memberToken}`)
+        .send({ shareAnonymousFeedback: true });
+      expect(memberToggleRes.status).toBe(403);
+
+      const adminToggleRes = await request(app)
+        .put('/api/settings/general')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ shareAnonymousFeedback: true });
+      expect(adminToggleRes.status).toBe(200);
+      expect(adminToggleRes.body.shareAnonymousFeedback).toBe(true);
+
+      // Verify anonymized payload strips PII/extra fields
+      const anonymized = buildAnonymizedFeedbackPayload({
+        type: 'bug',
+        summary: '  Timer sound does not play  ',
+        details: '  Happens on mobile Safari  ',
+        appVersion: '1.0.0',
+        route: '/recipes/123',
+        viewport: '390x844',
+        userAgent: 'Mozilla/5.0',
+        userId: 'secret-user-id',
+        username: 'secretuser',
+        email: 'user@example.com',
+        recipes: [{ title: 'Secret family recipe' }],
+      });
+      expect(anonymized).toEqual({
+        type: 'bug',
+        summary: 'Timer sound does not play',
+        details: 'Happens on mobile Safari',
+        appVersion: '1.0.0',
+        route: '/recipes/123',
+        viewport: '390x844',
+        userAgent: 'Mozilla/5.0',
+      });
+      expect('userId' in anonymized).toBe(false);
+      expect('username' in anonymized).toBe(false);
+      expect('email' in anonymized).toBe(false);
+      expect('recipes' in anonymized).toBe(false);
+
+      // 8. Logout revokes the Better Auth session token
       const logoutRes = await request(app)
         .post('/api/auth/logout')
         .set('Authorization', `Bearer ${memberToken}`);

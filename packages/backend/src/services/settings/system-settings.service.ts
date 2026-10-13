@@ -8,6 +8,7 @@ export interface SystemSettingsData {
   sharedShoppingLists: boolean;
   sharedPantry: boolean;
   sharedBatchCooking: boolean;
+  shareAnonymousFeedback: boolean;
 }
 
 const DEFAULT_SETTINGS: SystemSettingsData = {
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: SystemSettingsData = {
   sharedShoppingLists: true,
   sharedPantry: true,
   sharedBatchCooking: true,
+  shareAnonymousFeedback: false,
 };
 
 function toBool(val: unknown, fallback = true): boolean {
@@ -45,9 +47,17 @@ export class SystemSettingsService {
           "shared_shopping_lists" boolean NOT NULL DEFAULT 1,
           "shared_pantry" boolean NOT NULL DEFAULT 1,
           "shared_batch_cooking" boolean NOT NULL DEFAULT 1,
+          "share_anonymous_feedback" boolean NOT NULL DEFAULT 0,
           "updated_at" datetime NOT NULL DEFAULT (datetime('now'))
         )
       `);
+      try {
+        await AppDataSource.query(
+          `ALTER TABLE "system_settings" ADD COLUMN "share_anonymous_feedback" boolean NOT NULL DEFAULT 0`
+        );
+      } catch {
+        // Column already exists
+      }
       await AppDataSource.query(`
         INSERT INTO "system_settings" (
           "id",
@@ -58,9 +68,10 @@ export class SystemSettingsService {
           "shared_shopping_lists",
           "shared_pantry",
           "shared_batch_cooking",
+          "share_anonymous_feedback",
           "updated_at"
         )
-        VALUES ('default', 1, 1, 1, 1, 1, 1, 1, datetime('now'))
+        VALUES ('default', 1, 1, 1, 1, 1, 1, 1, 0, datetime('now'))
         ON CONFLICT ("id") DO NOTHING
       `);
       this.tableInitialized = true;
@@ -85,7 +96,8 @@ export class SystemSettingsService {
              "shared_meal_plans",
              "shared_shopping_lists",
              "shared_pantry",
-             "shared_batch_cooking"
+             "shared_batch_cooking",
+             "share_anonymous_feedback"
            FROM "system_settings"
            WHERE "id" = 'default'
            LIMIT 1`
@@ -100,6 +112,7 @@ export class SystemSettingsService {
             sharedShoppingLists: toBool(r.shared_shopping_lists, true),
             sharedPantry: toBool(r.shared_pantry, true),
             sharedBatchCooking: toBool(r.shared_batch_cooking, true),
+            shareAnonymousFeedback: toBool(r.share_anonymous_feedback, false),
           };
           return this.cachedSettings;
         }
@@ -146,6 +159,11 @@ export class SystemSettingsService {
     return settings.sharedBatchCooking;
   }
 
+  static async isShareAnonymousFeedbackEnabled(): Promise<boolean> {
+    const settings = this.cachedSettings ?? (await this.getSettings());
+    return settings.shareAnonymousFeedback;
+  }
+
   static async updateSettings(input: Partial<SystemSettingsData>): Promise<SystemSettingsData> {
     await this.initialize();
     const current = await this.getSettings();
@@ -174,6 +192,10 @@ export class SystemSettingsService {
         input.sharedBatchCooking !== undefined
           ? Boolean(input.sharedBatchCooking)
           : current.sharedBatchCooking,
+      shareAnonymousFeedback:
+        input.shareAnonymousFeedback !== undefined
+          ? Boolean(input.shareAnonymousFeedback)
+          : current.shareAnonymousFeedback,
     };
 
     if (AppDataSource.isInitialized) {
@@ -187,9 +209,10 @@ export class SystemSettingsService {
            "shared_shopping_lists",
            "shared_pantry",
            "shared_batch_cooking",
+           "share_anonymous_feedback",
            "updated_at"
          )
-         VALUES ('default', ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+         VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT ("id") DO UPDATE SET
            "shared_recipes" = EXCLUDED."shared_recipes",
            "show_recipe_author" = EXCLUDED."show_recipe_author",
@@ -198,6 +221,7 @@ export class SystemSettingsService {
            "shared_shopping_lists" = EXCLUDED."shared_shopping_lists",
            "shared_pantry" = EXCLUDED."shared_pantry",
            "shared_batch_cooking" = EXCLUDED."shared_batch_cooking",
+           "share_anonymous_feedback" = EXCLUDED."share_anonymous_feedback",
            "updated_at" = datetime('now')`,
         [
           next.sharedRecipes ? 1 : 0,
@@ -207,6 +231,7 @@ export class SystemSettingsService {
           next.sharedShoppingLists ? 1 : 0,
           next.sharedPantry ? 1 : 0,
           next.sharedBatchCooking ? 1 : 0,
+          next.shareAnonymousFeedback ? 1 : 0,
         ]
       );
     }

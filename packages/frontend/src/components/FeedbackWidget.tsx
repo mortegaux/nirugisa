@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bug, Lightbulb } from 'lucide-react';
+import { Bug, Lightbulb, ShieldCheck } from 'lucide-react';
 import { Dialog } from '@/components/Dialog';
-import { feedbackApi, type CreateFeedbackDto, type FeedbackType } from '@/services/api';
+import { feedbackApi, settingsApi, type CreateFeedbackDto, type FeedbackType } from '@/services/api';
 import { useToastStore } from '@/store/toast.store';
 import { version as appVersion } from '../../package.json';
 
@@ -26,6 +26,19 @@ export function FeedbackWidget() {
   const [summary, setSummary] = useState('');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [shareAnonymousFeedback, setShareAnonymousFeedback] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    settingsApi
+      .getGeneralSettings()
+      .then((res) => {
+        setShareAnonymousFeedback(Boolean(res.data?.shareAnonymousFeedback));
+      })
+      .catch(() => {
+        setShareAnonymousFeedback(false);
+      });
+  }, [open]);
 
   const resetForm = () => {
     setType('bug');
@@ -143,6 +156,20 @@ export function FeedbackWidget() {
                 className="w-full resize-y rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
+
+            {/* Explicit consent notice when developer forwarding is enabled */}
+            {shareAnonymousFeedback && (
+              <div
+                role="note"
+                className="flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground"
+              >
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <span>
+                  This will send an anonymized report to the Nommable team. No names, emails,
+                  recipes, or private data are included.
+                </span>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-1">

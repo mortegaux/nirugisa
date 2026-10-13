@@ -1,13 +1,54 @@
 import { Response } from 'express';
+import axios from 'axios';
 import { AppDataSource } from '../../db/data-source';
 import { FeedbackReport } from '../../db/entities/FeedbackReport';
 import { AuthRequest } from '../middleware';
 import { FeedbackStatus, FeedbackType } from '@nommable/shared';
+import { SystemSettingsService } from '../../services/settings/system-settings.service';
 
 const VALID_TYPES: FeedbackType[] = ['bug', 'feature'];
 const VALID_STATUSES: FeedbackStatus[] = ['open', 'in-progress', 'resolved'];
 const MAX_SUMMARY_LENGTH = 200;
 const MAX_DETAILS_LENGTH = 5000;
+
+export interface AnonymizedFeedbackPayload {
+  type: FeedbackType;
+  summary: string;
+  details?: string;
+  appVersion?: string;
+  route?: string;
+  viewport?: string;
+  userAgent?: string;
+}
+
+/**
+ * Strips all user/instance identifiers, emails, names, recipes, or unexpected fields,
+ * leaving only the anonymized feedback text and browser/route context.
+ */
+export function buildAnonymizedFeedbackPayload(
+  input: Record<string, unknown>
+): AnonymizedFeedbackPayload {
+  const payload: AnonymizedFeedbackPayload = {
+    type: input.type as FeedbackType,
+    summary: typeof input.summary === 'string' ? input.summary.trim() : '',
+  };
+  if (typeof input.details === 'string' && input.details.trim().length > 0) {
+    payload.details = input.details.trim();
+  }
+  if (typeof input.appVersion === 'string' && input.appVersion.trim().length > 0) {
+    payload.appVersion = input.appVersion.trim();
+  }
+  if (typeof input.route === 'string' && input.route.trim().length > 0) {
+    payload.route = input.route.trim();
+  }
+  if (typeof input.viewport === 'string' && input.viewport.trim().length > 0) {
+    payload.viewport = input.viewport.trim();
+  }
+  if (typeof input.userAgent === 'string' && input.userAgent.trim().length > 0) {
+    payload.userAgent = input.userAgent.trim();
+  }
+  return payload;
+}
 
 const feedbackRepo = () => AppDataSource.getRepository(FeedbackReport);
 
@@ -41,6 +82,22 @@ export const feedbackController = {
         status: 'open' as FeedbackStatus,
       });
       const saved = await feedbackRepo().save(report);
+
+      // Developer forwarding opt-in (default OFF; receiver URL configured via FEEDBACK_FORWARD_URL)
+      try {
+        const shareEnabled = await SystemSettingsService.isShareAnonymousFeedbackEnabled();
+        const forwardUrl = process.env.FEEDBACK_FORWARD_URL?.trim();
+        if (shareEnabled && forwardUrl) {
+          const anonymized = buildAnonymizedFeedbackPayload(req.body ?? {});
+          await axios.post(forwardUrl, anonymized, {
+            timeout: 5000,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      } catch (forwardErr) {
+        console.warn('[feedbackController] Failed to forward anonymous feedback:', forwardErr);
+      }
+
       res.status(201).json(saved);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

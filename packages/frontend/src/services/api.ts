@@ -364,6 +364,7 @@ export interface GeneralSystemSettings {
   sharedShoppingLists: boolean;
   sharedPantry: boolean;
   sharedBatchCooking: boolean;
+  shareAnonymousFeedback?: boolean;
 }
 
 // Settings API

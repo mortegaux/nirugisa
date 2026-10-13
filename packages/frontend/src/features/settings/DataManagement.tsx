@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { settingsApi, GeneralSystemSettings } from '@/services/api';
-import { BookOpen, Users, Lock, UserCheck, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { BookOpen, Users, Lock, UserCheck, CheckCircle2, AlertCircle, Trash2, MessageSquareShare } from 'lucide-react';
 
 const DEFAULT_GENERAL_SETTINGS: GeneralSystemSettings = {
   sharedRecipes: true,
@@ -10,6 +10,7 @@ const DEFAULT_GENERAL_SETTINGS: GeneralSystemSettings = {
   sharedShoppingLists: true,
   sharedPantry: true,
   sharedBatchCooking: true,
+  shareAnonymousFeedback: false,
 };
 
 export function DataManagement() {
@@ -34,13 +35,16 @@ export function DataManagement() {
           sharedShoppingLists: res.data.sharedShoppingLists !== false,
           sharedPantry: res.data.sharedPantry !== false,
           sharedBatchCooking: res.data.sharedBatchCooking !== false,
+          shareAnonymousFeedback: Boolean(res.data.shareAnonymousFeedback),
         });
       })
       .catch(() => {})
       .finally(() => setLoadingSettings(false));
   }, []);
 
-  const sharedKeys: Array<keyof Omit<GeneralSystemSettings, 'showRecipeAuthor'>> = [
+  const sharedKeys: Array<
+    keyof Omit<GeneralSystemSettings, 'showRecipeAuthor' | 'shareAnonymousFeedback'>
+  > = [
     'sharedRecipes',
     'sharedCollections',
     'sharedMealPlans',
@@ -70,6 +74,7 @@ export function DataManagement() {
         sharedShoppingLists: res.data.sharedShoppingLists !== false,
         sharedPantry: res.data.sharedPantry !== false,
         sharedBatchCooking: res.data.sharedBatchCooking !== false,
+        shareAnonymousFeedback: Boolean(res.data.shareAnonymousFeedback),
       });
       setSuccess(successMsg);
     } catch (err: any) {
@@ -130,7 +135,7 @@ export function DataManagement() {
   };
 
   const sharingOptions: Array<{
-    key: keyof Omit<GeneralSystemSettings, 'showRecipeAuthor'>;
+    key: keyof Omit<GeneralSystemSettings, 'showRecipeAuthor' | 'shareAnonymousFeedback'>;
     label: string;
     description: string;
   }> = [
@@ -413,6 +418,48 @@ export function DataManagement() {
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Each user has a completely isolated account — recipes, collections, favorites, meal plans, shopping lists, pantry items, and batch cooking plans are all private to the user who created them.
               </p>
+            </button>
+          </div>
+        </div>
+
+        {/* Developer Feedback Forwarding Opt-In */}
+        <div className="border border-border bg-card rounded-2xl p-5 mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <MessageSquareShare className="w-4 h-4 text-primary" />
+                Share anonymous feedback with Nommable developers
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                When enabled, in-app bug reports and feature requests are forwarded anonymously
+                (feedback text, app version, route, viewport, and browser metadata only — no names,
+                emails, recipes, or private data). Users are shown an explicit consent notice before
+                each submission.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={Boolean(settings.shareAnonymousFeedback)}
+              aria-label="Share anonymous feedback with Nommable developers"
+              disabled={loadingSettings || savingSharingMode}
+              onClick={() =>
+                handleUpdateSettings(
+                  { shareAnonymousFeedback: !settings.shareAnonymousFeedback },
+                  !settings.shareAnonymousFeedback
+                    ? 'Anonymous feedback sharing with Nommable developers enabled.'
+                    : 'Anonymous feedback sharing with Nommable developers disabled.'
+                )
+              }
+              className={`mt-0.5 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed ${
+                settings.shareAnonymousFeedback ? 'bg-primary' : 'bg-muted-foreground/30'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  settings.shareAnonymousFeedback ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
             </button>
           </div>
         </div>
