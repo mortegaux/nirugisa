@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { AutoAwesomeIcon } from './icons/MaterialIcon';
-import { useAuthStore } from '@/store/auth.store';
 
 interface AIConfigAlertProps {
   onClose: () => void;
@@ -16,9 +15,6 @@ interface AIConfigAlertProps {
  * BYOK-only, so the tiers section stays hidden.
  */
 export function AIConfigAlert({ onClose, message }: AIConfigAlertProps) {
-  const { user } = useAuthStore();
-  // Admins configure the shared AI key; everyone else adds their own key (BYOK).
-  const setupTab = user?.role === 'admin' ? 'ai' : 'aikey';
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -81,7 +77,7 @@ export function AIConfigAlert({ onClose, message }: AIConfigAlertProps) {
             Maybe Later
           </button>
           <Link
-            to={`/settings?tab=${setupTab}`}
+            to="/settings?tab=ai"
             onClick={onClose}
             className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-center inline-flex items-center justify-center gap-2"
           >
