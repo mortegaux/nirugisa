@@ -10,6 +10,7 @@ import { useToastStore } from '@/store/toast.store';
 import { useConfirmStore } from '@/store/confirm.store';
 import { AddToCollectionDialog } from './AddToCollectionDialog';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAIStatus, aiNotConfiguredClass, AISetupBadge } from '@/hooks/useAIStatus';
 
 function MultiSelectDropdown({
   label,
@@ -147,6 +148,7 @@ const parsePantryMatch = (reason: string): { matched: number; total: number } | 
 export default function RecipesPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const openAIGenerate = useRecipeCreateStore((s) => s.openAIGenerate);
+  const { isReady: aiReady, isLoading: aiLoading } = useAIStatus();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -382,11 +384,13 @@ export default function RecipesPage() {
         <div className="flex gap-2">
           <button
             onClick={() => void openAIGenerate()}
-            className="rounded-lg border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-accent shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center gap-2"
+            className={`rounded-lg border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-accent shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center gap-2 ${!aiReady && !aiLoading ? aiNotConfiguredClass : ''}`}
             aria-label="Generate recipe with AI"
+            title={!aiReady && !aiLoading ? 'Set up AI to unlock this feature' : undefined}
           >
             <AutoAwesomeIcon size={18} />
             Generate with AI
+            {!aiReady && !aiLoading && <AISetupBadge />}
           </button>
           <Link
             to="/recipes/new"
