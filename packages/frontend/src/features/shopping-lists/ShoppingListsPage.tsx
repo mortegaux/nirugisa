@@ -100,6 +100,7 @@ const CATEGORY_KEYWORDS: { category: string; keywords: string[] }[] = [
     category: 'Snacks',
     keywords: [
       'trail mix', 'granola bar', 'fruit snack', 'rice cake',
+      'potato chips', 'tortilla chips', 'pita chips', 'corn chips', 'kettle chips',
       'chips', 'crackers', 'pretzel', 'pretzels', 'popcorn', 'nuts', 'almonds', 'peanuts', 'cashews',
       'granola', 'chocolate', 'candy', 'cookie', 'cookies', 'hummus', 'salsa', 'dip', 'guacamole',
       'jerky', 'goldfish',
@@ -111,6 +112,7 @@ const CATEGORY_KEYWORDS: { category: string; keywords: string[] }[] = [
       'olive oil', 'peanut butter', 'almond butter', 'baking powder', 'baking soda', 'maple syrup',
       'black pepper', 'chili powder', 'garlic powder', 'onion powder', 'bay leaf', 'coconut milk',
       'soy sauce', 'hot sauce', 'bbq sauce',
+      'chicken broth', 'beef broth', 'vegetable broth', 'chicken stock', 'beef stock', 'vegetable stock',
       'flour', 'sugar', 'salt', 'rice', 'pasta', 'spaghetti', 'macaroni', 'oil', 'vinegar', 'honey',
       'cereal', 'oatmeal', 'oats', 'beans', 'lentils', 'chickpeas', 'canned', 'soup', 'broth', 'stock',
       'sauce', 'marinara', 'ketchup', 'mustard', 'mayonnaise', 'mayo', 'cinnamon', 'cumin', 'paprika',
@@ -125,18 +127,21 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function guessCategory(itemName: string): string {
   const text = itemName.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
   if (!text.trim()) return 'Other';
-  // Phrases are matched before single words so "ice cream" beats "cream".
-  for (const phrasesOnly of [true, false]) {
-    for (const { category, keywords } of CATEGORY_KEYWORDS) {
-      for (const keyword of keywords) {
-        if (keyword.includes(' ') !== phrasesOnly) continue;
-        if (new RegExp(`\\b${escapeRegExp(keyword)}\\b`).test(text)) {
-          return category;
-        }
+  // Longest matching keyword wins, so "potato chips" beats "potato" and
+  // "tortilla chips" beats "tortilla". Ties fall back to category order
+  // (earlier categories win), preserving the old priority for genuine ties.
+  let bestCategory: string | null = null;
+  let bestLength = 0;
+  CATEGORY_KEYWORDS.forEach(({ category, keywords }) => {
+    for (const keyword of keywords) {
+      if (!new RegExp(`\\b${escapeRegExp(keyword)}\\b`).test(text)) continue;
+      if (keyword.length > bestLength) {
+        bestCategory = category;
+        bestLength = keyword.length;
       }
     }
-  }
-  return 'Other';
+  });
+  return bestCategory ?? 'Other';
 }
 
 function ChevronDown({ className = '' }: { className?: string }) {
