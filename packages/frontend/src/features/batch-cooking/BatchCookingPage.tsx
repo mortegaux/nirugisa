@@ -234,12 +234,23 @@ export default function BatchCookingPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Batch Cooking & Meal Prep</h1>
-        <p className="text-muted-foreground mt-1">
-          Cook once, eat multiple times - save time and effort with batch cooking
-        </p>
+      {/* Header — matches Recipes / Meal Plans / Shopping Lists */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Batch Cooking & Meal Prep</h1>
+          <p className="text-muted-foreground mt-1">
+            {plans.length} batch cook{plans.length === 1 ? '' : 's'} — Cook once, eat multiple times
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSessionModal(true)}
+            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            aria-label="Create a batch cook"
+          >
+            Create a Batch Cook
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -281,14 +292,6 @@ export default function BatchCookingPage() {
       {/* Plans Tab */}
       {activeTab === 'plans' && (
         <div className="space-y-6">
-          {/* Create New Plan Button — the primary action on this page */}
-          <button
-            onClick={() => setShowSessionModal(true)}
-            className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-medium shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center justify-center gap-2"
-          >
-            <span className="text-2xl">+</span>
-            Create a Batch Cook
-          </button>
 
           {/* Bulk Actions Bar */}
           {plans.length > 0 && (
