@@ -90,12 +90,12 @@ export function AIExtractRecipeModal({ onClose }: AIExtractRecipeModalProps) {
             /* Upload Form */
             <form onSubmit={handleExtract} className="space-y-6">
               {/* Cost Warning */}
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
                 <div className="flex gap-3">
-                  <WarningIcon size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                  <WarningIcon size={20} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <h3 className="font-semibold text-amber-900 mb-1">AI Vision Cost Notice</h3>
-                    <p className="text-sm text-amber-800">
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
                       Extracting recipes from images uses AI vision models, which have higher costs than text-only AI features.
                       Each image processed will consume AI tokens.
                     </p>
@@ -197,9 +197,9 @@ export function AIExtractRecipeModal({ onClose }: AIExtractRecipeModalProps) {
               )}
 
               {/* Info */}
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
                 <h3 className="font-semibold text-blue-900 mb-2">How it works</h3>
-                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
                   <li>Upload screenshots of recipes from paywalled sites or cookbooks</li>
                   <li>AI vision will extract ingredients, instructions, and other details</li>
                   <li>You'll be able to review and edit the extracted recipe before saving</li>
@@ -210,9 +210,9 @@ export function AIExtractRecipeModal({ onClose }: AIExtractRecipeModalProps) {
           ) : (
             /* Recipe Preview */
             <div className="space-y-4">
-              <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+              <div className="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4">
                 <h3 className="font-semibold text-green-900 mb-1">✓ Recipe Extracted Successfully</h3>
-                <p className="text-sm text-green-800">
+                <p className="text-sm text-green-800 dark:text-green-200">
                   Review the extracted recipe below. You can edit it before saving.
                 </p>
                 <p className="text-sm font-medium text-green-900 mt-2">
