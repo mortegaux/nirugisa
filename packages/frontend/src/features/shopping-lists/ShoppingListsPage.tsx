@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import Fuse from 'fuse.js';
 import { shoppingListApi } from '@/services/api';
 import { CelebrationIcon } from '@/components/icons/MaterialIcon';
 import { Pagination } from '@/components/Pagination';
@@ -122,25 +123,51 @@ const CATEGORY_KEYWORDS: { category: string; keywords: string[] }[] = [
   },
 ];
 
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Flattened keyword → category index for Fuse.js fuzzy matching.
+// Fuse handles typos ("potatoe" → "potato") via Bitap approximate matching,
+// so we don't hand-roll edit distance or stemming.
+const CATEGORY_ENTRIES: { keyword: string; category: string }[] = CATEGORY_KEYWORDS.flatMap(
+  ({ category, keywords }) => keywords.map((keyword) => ({ keyword, category })),
+);
+
+const categoryFuse = new Fuse(CATEGORY_ENTRIES, {
+  keys: ['keyword'],
+  threshold: 0.4, // 0 = exact, 1 = anything. 0.4 tolerates 1-2 typos on short words.
+  includeScore: true,
+  ignoreLocation: true, // Match anywhere in the keyword, not just the start.
+});
 
 function guessCategory(itemName: string): string {
-  const text = itemName.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
-  if (!text.trim()) return 'Other';
-  // Longest matching keyword wins, so "potato chips" beats "potato" and
-  // "tortilla chips" beats "tortilla". Ties fall back to category order
-  // (earlier categories win), preserving the old priority for genuine ties.
-  let bestCategory: string | null = null;
-  let bestLength = 0;
-  CATEGORY_KEYWORDS.forEach(({ category, keywords }) => {
-    for (const keyword of keywords) {
-      if (!new RegExp(`\\b${escapeRegExp(keyword)}\\b`).test(text)) continue;
-      if (keyword.length > bestLength) {
-        bestCategory = category;
-        bestLength = keyword.length;
-      }
+  const text = itemName.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+  if (!text) return 'Other';
+  // Generate all contiguous word phrases so "potato chips" is tried as a
+  // whole phrase, not just as "potato" + "chips" separately.
+  const words = text.split(/\s+/);
+  const phrases: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    for (let j = i + 1; j <= words.length; j++) {
+      phrases.push(words.slice(i, j).join(' '));
     }
-  });
+  }
+  // Best match = lowest Fuse score; exact ties break toward the longer
+  // keyword so "potato chips" (Snacks) beats "potato" (Produce).
+  // Scores are rounded to 3 decimals first — Fuse's "perfect" matches
+  // come back as floating-point noise (2e-16, 8e-12), not exact zeros.
+  let bestCategory: string | null = null;
+  let bestScore = Infinity;
+  let bestLength = 0;
+  for (const phrase of phrases) {
+    const results = categoryFuse.search(phrase);
+    if (results.length === 0) continue;
+    const top = results[0];
+    const score = Math.round((top.score ?? 1) * 1000) / 1000;
+    const keywordLength = top.item.keyword.length;
+    if (score < bestScore || (score === bestScore && keywordLength > bestLength)) {
+      bestCategory = top.item.category;
+      bestScore = score;
+      bestLength = keywordLength;
+    }
+  }
   return bestCategory ?? 'Other';
 }
 
