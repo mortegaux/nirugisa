@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { AccountSettings } from './AccountSettings';
 import { UserManagement } from './UserManagement';
@@ -12,7 +13,15 @@ type Tab = 'account' | 'preferences' | 'aikey' | 'ai' | 'users' | 'email' | 'dat
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<Tab>('account');
+  const [searchParams] = useSearchParams();
+  // Deep link support: /settings?tab=ai opens the AI tab directly.
+  // Used by the AI setup CTA when AI isn't configured yet.
+  const initialTab = (searchParams.get('tab') as Tab) || 'account';
+  // The AI Settings tab is admin-only — fall back to the BYOK key tab for
+  // non-admins hitting the deep link.
+  const safeInitialTab: Tab =
+    initialTab === 'ai' && user?.role !== 'admin' ? 'aikey' : initialTab;
+  const [activeTab, setActiveTab] = useState<Tab>(safeInitialTab);
 
   const tabs = [
     { id: 'account' as Tab, label: 'Account', visible: true },

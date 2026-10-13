@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, PenLine, Link2, Sparkles } from 'lucide-react';
 import { useRecipeCreateStore } from '@/store/recipeCreate.store';
+import { useAIStatus, AISetupBadge } from '@/hooks/useAIStatus';
 
 /**
  * Global "+ New" recipe menu, mounted in the DashboardLayout header so a
@@ -16,6 +17,7 @@ import { useRecipeCreateStore } from '@/store/recipeCreate.store';
 export function NewRecipeMenu() {
   const navigate = useNavigate();
   const { openImport, openAIGenerate } = useRecipeCreateStore();
+  const { isReady: aiReady, isLoading: aiLoading } = useAIStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -77,9 +79,10 @@ export function NewRecipeMenu() {
     },
     {
       label: 'Generate with AI',
-      hint: 'Describe it and let AI draft it',
+      hint: aiReady || aiLoading ? 'Describe it and let AI draft it' : 'Set up AI to unlock',
       Icon: Sparkles,
       onSelect: closeAnd(() => void openAIGenerate()),
+      needsSetup: !aiReady && !aiLoading,
     },
   ];
 
@@ -105,19 +108,22 @@ export function NewRecipeMenu() {
           aria-label="Add a new recipe"
           className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-card shadow-xl"
         >
-          {items.map(({ label, hint, Icon, onSelect }) => (
+          {items.map(({ label, hint, Icon, onSelect, needsSetup }) => (
             <button
               key={label}
               type="button"
               role="menuitem"
               onClick={onSelect}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
+              className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent focus:bg-accent focus:outline-none ${needsSetup ? 'opacity-70' : ''}`}
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${needsSetup ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-primary'}`}>
                 <Icon className="h-4 w-4" aria-hidden="true" />
               </span>
               <span>
-                <span className="block text-sm font-medium text-foreground">{label}</span>
+                <span className="block text-sm font-medium text-foreground">
+                  {label}
+                  {needsSetup && <AISetupBadge />}
+                </span>
                 <span className="block text-xs text-muted-foreground">{hint}</span>
               </span>
             </button>

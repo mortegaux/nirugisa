@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { aiApi } from '@/services/api';
+import { invalidateAIStatus } from '@/hooks/useAIStatus';
 import type { AIProvider, UserAIKeyConfig, AIMode } from '@nommable/shared';
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -70,6 +71,7 @@ export default function UserAIKeySettings() {
       });
       setMessage('Your AI key was saved successfully');
       await load();
+      invalidateAIStatus();
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to save your AI key');
       console.error('Failed to save personal AI key:', error);
