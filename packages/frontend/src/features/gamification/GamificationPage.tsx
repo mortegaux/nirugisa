@@ -37,8 +37,8 @@ interface AchievementDefinition {
 const CATEGORY_COLORS = {
   cooking: 'bg-coral-100 text-coral-800 border-coral-300',
   recipes: 'bg-herb-100 text-herb-800 border-herb-300',
-  streaks: 'bg-amber-100 text-amber-800 border-amber-300',
-  social: 'bg-purple-100 text-purple-800 border-purple-300',
+  streaks: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700',
+  social: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-700',
   milestones: 'bg-secondary/10 text-secondary-foreground border-secondary/20',
 };
 
