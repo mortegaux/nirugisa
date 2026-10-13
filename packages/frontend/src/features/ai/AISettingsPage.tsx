@@ -243,8 +243,8 @@ export default function AISettingsPage({ hideHeader = false }: { hideHeader?: bo
           <div
             className={`mb-4 rounded p-3 ${
               message.toLowerCase().includes('success')
-                ? 'bg-green-100 text-green-700 border border-green-200'
-                : 'bg-red-100 text-red-700 border border-red-200'
+                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
             }`}
           >
             {message}
@@ -255,8 +255,8 @@ export default function AISettingsPage({ hideHeader = false }: { hideHeader?: bo
           <div
             className={`mb-4 rounded p-3 ${
               testResult.success
-                ? 'bg-green-100 text-green-700 border border-green-200'
-                : 'bg-red-100 text-red-700 border border-red-200'
+                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
             }`}
           >
             <div className="flex items-start gap-2">
