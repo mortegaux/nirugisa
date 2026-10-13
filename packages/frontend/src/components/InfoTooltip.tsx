@@ -65,9 +65,9 @@ interface InfoBannerProps {
 
 export function InfoBanner({ title, description, type = 'info', className = '' }: InfoBannerProps) {
   const colors = {
-    info: 'bg-blue-50 border-blue-200 text-blue-900',
-    tip: 'bg-green-50 border-green-200 text-green-900',
-    warning: 'bg-amber-50 border-amber-200 text-amber-900',
+    info: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-900',
+    tip: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-900',
+    warning: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-900',
   };
 
   const icons = {
