@@ -16,7 +16,7 @@ const inputClassName =
   'w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary';
 const labelClassName = 'block text-sm font-medium text-foreground mb-2';
 
-export default function UserAIKeySettings() {
+export default function UserAIKeySettings({ hideHeader = false }: { hideHeader?: boolean }) {
   const [mode, setMode] = useState<AIMode>('shared');
   const [provider, setProvider] = useState<AIProvider>('openai');
   const [apiKey, setApiKey] = useState('');
@@ -131,8 +131,8 @@ export default function UserAIKeySettings() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-3xl font-bold text-foreground">Your AI key</h1>
+    <div className={hideHeader ? '' : 'mx-auto max-w-2xl'}>
+      {!hideHeader && <h1 className="mb-6 text-3xl font-bold text-foreground">Your AI key</h1>}
 
       {mode === 'shared' ? (
         <div className="rounded-lg bg-card border border-border p-6 shadow-sm">
