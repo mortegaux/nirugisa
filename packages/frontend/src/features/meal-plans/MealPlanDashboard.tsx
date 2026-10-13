@@ -9,10 +9,10 @@ import { compareEntries, decodeEntryNotes, formatTimeForDisplay, resolveMealType
 import { useToastStore } from '@/store/toast.store';
 
 const MEAL_TYPE_CONFIG = {
-  breakfast: { color: 'bg-amber-50 border-amber-200', label: 'Breakfast' },
-  lunch: { color: 'bg-green-50 border-green-200', label: 'Lunch' },
-  dinner: { color: 'bg-blue-50 border-blue-200', label: 'Dinner' },
-  snack: { color: 'bg-purple-50 border-purple-200', label: 'Snack' },
+  breakfast: { color: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800', label: 'Breakfast' },
+  lunch: { color: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800', label: 'Lunch' },
+  dinner: { color: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800', label: 'Dinner' },
+  snack: { color: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800', label: 'Snack' },
 };
 
 export default function MealPlanDashboard() {
