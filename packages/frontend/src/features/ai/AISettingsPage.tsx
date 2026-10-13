@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { aiApi } from '@/services/api';
+import { invalidateAIStatus } from '@/hooks/useAIStatus';
 import type { AIProvider, AIModelInfo, AIMode } from '@nommable/shared';
 
 export default function AISettingsPage() {
@@ -177,6 +178,8 @@ export default function AISettingsPage() {
       await loadConfig();
       setApiKey(''); // Clear API key field after saving
       setImageApiKey('');
+      // Bust the cached AI status so buttons update their visual state immediately.
+      invalidateAIStatus();
     } catch (error: any) {
       const errorMsg = error.response?.data?.error || 'Failed to save AI settings';
       setMessage(errorMsg);
