@@ -23,7 +23,7 @@ npm run migration:run -w packages/backend
 npm run migration:revert -w packages/backend
 
 # Docker
-docker-compose up -d       # Single-container stack (Express + SQLite + bundled SPA on :8765)
+docker-compose up -d       # Single-container stack (Express + SQLite + bundled SPA on :8992)
 ```
 
 ## Architecture
@@ -46,7 +46,7 @@ Express.js + TypeORM + SQLite (`better-sqlite3`, WAL mode) + Better Auth. Layere
 **Key details:**
 - Single SQLite database (`DATABASE_PATH`, defaults to `/data/nommable.db` in Docker or `./data/nommable.db` locally) with WAL mode and `foreign_keys = ON`
 - TypeORM `synchronize: true` in dev, `InitialSchema1788000000000` migration in production (`migrationsRun: true`)
-- Admin account auto-created on first startup (`AdminSeederService`) via Better Auth
+- Admin account is created via the first-run onboarding wizard (`GET /api/setup/status`, `POST /api/setup/complete`) — there is no auto-seeded admin
 - Swagger docs at `/api/docs`
 - All queries enforce user ownership via `userId` field (or respect shared library toggles in `SystemSettingsService`)
 
@@ -56,7 +56,7 @@ React 18 + Vite + Tailwind CSS + Radix UI.
 
 - **Feature-based structure** in `src/features/` (auth, recipes, meal-plans, shopping-lists, pantry, batch-cooking, analytics, gamification, ai, preferences, settings)
 - **State:** Zustand auth store (`src/store/auth.store.ts`), local state elsewhere
-- **API client:** `src/services/api.ts` — Axios instance with JWT interceptor, namespaced exports per domain
+- **API client:** `src/services/api.ts` — Axios instance with Bearer token interceptor, namespaced exports per domain
 - **Routing:** React Router 6 in `App.tsx`, auth check on mount, redirect to /login when unauthenticated
 - Dev server proxies `/api/*` to backend on :3001 (see `vite.config.ts`)
 
