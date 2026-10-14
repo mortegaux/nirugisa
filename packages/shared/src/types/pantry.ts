@@ -30,6 +30,25 @@ export interface PantryItemUpdateDto extends Partial<PantryItemCreateDto> {
   id: string;
 }
 
+/**
+ * One candidate item detected by AI vision from a pantry/fridge photo.
+ * Returned by the scan endpoint for user review — never written to the
+ * pantry directly. The user confirms / edits / removes each candidate
+ * in the review step before anything is added.
+ */
+export interface ScannedPantryItem {
+  /** Product name as read from the photo (e.g. "Ketchup", "Milk"). */
+  name: string;
+  /** Best-guess quantity visible in the photo (e.g. 1 bottle, 2 cans). */
+  quantity: number;
+  /** Unit for the quantity (e.g. "bottle", "can", "box", "item"). */
+  unit: string;
+  /** Pantry category, one of PANTRY_CATEGORIES. */
+  category: string;
+  /** Model self-reported confidence, 0-1. Absent when the provider doesn't report one. */
+  confidence?: number;
+}
+
 export const PANTRY_CATEGORIES = [
   'Spices & Seasonings',
   'Grains & Pasta',

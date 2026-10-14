@@ -1,4 +1,5 @@
 import { AIProvider, AIGeneratedRecipe, AISubstitutionSuggestion } from '@nommable/shared';
+import type { ScannedPantryItem } from '@nommable/shared';
 
 export interface AIProviderConfig {
   provider: AIProvider;
@@ -20,6 +21,15 @@ export interface IAIProvider {
   extractRecipeFromImages(images: ImageInput[]): Promise<AIGeneratedRecipe>;
   extractRecipeFromText?(text: string): Promise<AIGeneratedRecipe>;
   extractIngredientsFromImage(image: ImageInput): Promise<string[]>;
+  /**
+   * Identify pantry items visible across one or more wide photos
+   * (pantry shelves, fridge with doors open, freezer, etc.).
+   * `locationHint` is where the user says the photos were taken
+   * (e.g. "Refrigerator") — used to nudge the model, not returned.
+   * Returns one candidate per distinct item found; duplicates across
+   * photos are merged into a single candidate with summed quantity.
+   */
+  scanPantryFromImages(images: ImageInput[], locationHint?: string): Promise<ScannedPantryItem[]>;
   generateImage?(prompt: string, model?: string): Promise<{ buffer: Buffer; mimeType: string }>;
 }
 

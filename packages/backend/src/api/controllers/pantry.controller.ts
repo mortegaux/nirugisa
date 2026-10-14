@@ -1,6 +1,9 @@
 import { Response } from 'express';
 import { PantryService } from '../../services/pantry/pantry.service';
 import { AuthRequest } from '../middleware/auth';
+import { AIService, sendAIUnavailable } from '../../services/ai/ai.service';
+import { processImage } from '../../utils/image-processor';
+import type { ImageInput } from '../../services/ai/types';
 
 const pantryService = new PantryService();
 
@@ -88,6 +91,71 @@ export const pantryController = {
       res.json(item);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  },
+
+  /**
+   * AI vision scan of pantry/fridge photos.
+   * Accepts up to 5 wide photos (multipart `files`) plus an optional
+   * `location` hint (where the photos were taken).
+   * Returns detected candidates for user review — nothing is written
+   * to the pantry here; the frontend confirms/edits first.
+   */
+  async scanImages(req: AuthRequest, res: Response) {
+    try {
+      const resolution = await AIService.resolveProvider(req.userId);
+
+      if (!resolution.ok) {
+        return sendAIUnavailable(res, resolution);
+      }
+
+      const provider = resolution.provider;
+
+      if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
+        return res.status(400).json({ error: 'No files provided' });
+      }
+
+      const files = req.files as Express.Multer.File[];
+      if (files.length > 5) {
+        return res.status(400).json({ error: 'Maximum 5 files allowed' });
+      }
+
+      const locationHint =
+        typeof req.body?.location === 'string' && req.body.location.trim()
+          ? req.body.location.trim()
+          : undefined;
+
+      const images: ImageInput[] = [];
+      for (const file of files) {
+        const mimeType = file.mimetype;
+        if (!mimeType.startsWith('image/')) {
+          return res.status(400).json({
+            error: `Unsupported file type: ${mimeType}. Only image files are supported.`,
+          });
+        }
+        // Skip canvas validation for HEIC/HEIF — AI providers handle them directly.
+        if (
+          mimeType === 'image/heic' ||
+          mimeType === 'image/heif' ||
+          mimeType === 'image/heic-sequence' ||
+          mimeType === 'image/heif-sequence'
+        ) {
+          images.push({ data: file.buffer, mimeType: 'image/jpeg' });
+        } else {
+          const processedImage = await processImage(file.buffer, mimeType);
+          images.push({ data: processedImage.data, mimeType: processedImage.mimeType });
+        }
+      }
+
+      const items = await provider.scanPantryFromImages(images, locationHint);
+      res.json({ items });
+    } catch (error: any) {
+      if (error.message?.includes('not supported with Ollama') || error.message?.includes('Ollama does not support vision')) {
+        return res.status(400).json({
+          error: 'Pantry photo scanning requires OpenAI (GPT-4 Vision), Anthropic (Claude 3+), or Google (Gemini). Ollama does not support vision capabilities.',
+        });
+      }
+      res.status(500).json({ error: error.message });
     }
   },
 };
