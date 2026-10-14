@@ -177,7 +177,7 @@ export function PantryScanModal({ onClose, existingItems, onAdded }: PantryScanM
   };
 
   return (
-    <Dialog title="Scan Pantry with Camera" onClose={onClose} panelClassName="max-w-4xl">
+    <Dialog title="Scan Pantry with AI" onClose={onClose} panelClassName="max-w-4xl">
       <div className="p-6 space-y-5">
         {step === 'capture' && (
           <>

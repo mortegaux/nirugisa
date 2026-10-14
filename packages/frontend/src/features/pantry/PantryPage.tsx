@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { pantryApi } from '@/services/api';
-import { BarChartIcon } from '@/components/icons/MaterialIcon';
+import { BarChartIcon, AutoAwesomeIcon } from '@/components/icons/MaterialIcon';
 import { PantryScanModal } from './PantryScanModal';
+import { useAIStatus, aiNotConfiguredClass, AISetupBadge } from '@/hooks/useAIStatus';
 import type { PantryItem } from '@nommable/shared';
 import { useConfirmStore } from '@/store/confirm.store';
 import { useToastStore } from '@/store/toast.store';
@@ -33,6 +34,7 @@ export default function PantryPage() {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
+  const { isReady: aiReady, isLoading: aiLoading } = useAIStatus();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -183,9 +185,13 @@ export default function PantryPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowScanModal(true)}
-            className="rounded-lg border border-input bg-background px-4 py-2 font-medium text-foreground shadow-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className={`rounded-lg border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-accent shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center gap-2 ${!aiReady && !aiLoading ? aiNotConfiguredClass : ''}`}
+            aria-label="Scan pantry with AI"
+            title={!aiReady && !aiLoading ? 'Set up AI to unlock this feature' : undefined}
           >
-            Scan with Camera
+            <AutoAwesomeIcon size={18} />
+            Scan with AI
+            {!aiReady && !aiLoading && <AISetupBadge />}
           </button>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
