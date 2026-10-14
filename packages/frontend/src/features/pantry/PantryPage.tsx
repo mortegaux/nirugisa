@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { pantryApi } from '@/services/api';
 import { BarChartIcon } from '@/components/icons/MaterialIcon';
+import { PantryScanModal } from './PantryScanModal';
 import type { PantryItem } from '@nommable/shared';
 import { useConfirmStore } from '@/store/confirm.store';
 import { useToastStore } from '@/store/toast.store';
@@ -31,6 +32,7 @@ export default function PantryPage() {
   const [lowStockItems, setLowStockItems] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showScanModal, setShowScanModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -178,13 +180,29 @@ export default function PantryPage() {
           <h1 className="text-3xl font-bold text-foreground">Pantry Management</h1>
           <p className="text-muted-foreground mt-1">{items.length}{' '}items in your pantry</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-        >
-          {showAddForm ? 'Cancel' : 'Add Item'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowScanModal(true)}
+            className="rounded-lg border border-input bg-background px-4 py-2 font-medium text-foreground shadow-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            Scan with Camera
+          </button>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            {showAddForm ? 'Cancel' : 'Add Item'}
+          </button>
+        </div>
       </div>
+
+      {showScanModal && (
+        <PantryScanModal
+          onClose={() => setShowScanModal(false)}
+          existingItems={items}
+          onAdded={loadPantryData}
+        />
+      )}
 
       {/* Alert Cards */}
       {(expiringItems.length > 0 || lowStockItems.length > 0) && (
