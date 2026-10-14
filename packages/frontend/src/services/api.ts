@@ -18,6 +18,7 @@ import type {
   UserInvitationResponse,
   AdminResetPasswordResponse,
   UserDirectCreateDto,
+  ScannedPantryItem,
   UserDirectCreateResponse,
   UsernameSuggestionsResponse,
   UserRole,
@@ -391,6 +392,15 @@ export const pantryApi = {
   updateQuantity: (id: string, quantityChange: number) =>
     api.patch(`/pantry/${id}/quantity`, { quantityChange }),
   toggleLowStock: (id: string) => api.patch(`/pantry/${id}/toggle-low-stock`),
+  /** AI vision scan of pantry/fridge photos. Returns candidates for review — nothing is added until the user confirms. */
+  scanImages: (files: File[], location: string) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    formData.append('location', location);
+    return api.post<{ items: ScannedPantryItem[] }>('/pantry/scan-images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // Analytics API
