@@ -45,6 +45,12 @@ export function Dialog({
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
   const titleId = useRef(`dialog-title-${Math.random().toString(36).slice(2, 9)}`);
+  // Keep the latest onClose in a ref so the mount-once effect below never
+  // goes stale — and never re-runs (yanking focus back to the first
+  // element) when a parent re-renders with a new onClose identity, e.g.
+  // typing in a form inside the dialog.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   // Remember the trigger so focus can return to it.
   useEffect(() => {
@@ -62,7 +68,7 @@ export function Dialog({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -99,7 +105,7 @@ export function Dialog({
       const trigger = triggerRef.current;
       if (trigger instanceof HTMLElement) trigger.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return createPortal(
     <div
