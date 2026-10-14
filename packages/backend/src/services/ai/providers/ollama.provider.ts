@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { buildEnhancePrompts } from './enhance-prompts';
-import { AIGeneratedRecipe, AISubstitutionSuggestion } from '@nommable/shared';
+import { AIGeneratedRecipe, AISubstitutionSuggestion, ScannedPantryItem } from '@nommable/shared';
 import {
   IAIProvider,
   RecipeGenerationOptions,
@@ -185,5 +185,9 @@ ${rawText}`;
 
   async extractIngredientsFromImage(_image: ImageInput): Promise<string[]> {
     throw new Error('Ingredient detection requires vision AI (OpenAI, Anthropic, or Google). Ollama does not support vision capabilities.');
+  }
+
+  async scanPantryFromImages(_images: ImageInput[], _locationHint?: string): Promise<ScannedPantryItem[]> {
+    throw new Error('Pantry photo scanning requires vision AI (OpenAI, Anthropic, or Google). Ollama does not support vision capabilities.');
   }
 }

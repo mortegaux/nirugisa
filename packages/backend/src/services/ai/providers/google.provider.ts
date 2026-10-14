@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { buildEnhancePrompts } from './enhance-prompts';
-import { AIGeneratedRecipe, AISubstitutionSuggestion } from '@nommable/shared';
+import { AIGeneratedRecipe, AISubstitutionSuggestion, ScannedPantryItem } from '@nommable/shared';
 import {
   IAIProvider,
   RecipeGenerationOptions,
@@ -283,6 +283,37 @@ ${rawText}`;
 
     const parsed = JSON.parse(jsonText);
     return parsed.ingredients || [];
+  }
+
+  async scanPantryFromImages(images: ImageInput[], locationHint?: string): Promise<ScannedPantryItem[]> {
+    const prompt = `These ${images.length} photo(s) show food storage${locationHint ? ` (taken in the ${locationHint})` : ''} — wide shots of shelves / fridge / freezer, not one item per photo. Identify every distinct edible food or drink item visible across all photos.
+
+For each item return: name (product name as printed on the label when readable, e.g. "Heinz Ketchup", "Whole Milk" — not generic "sauce"), quantity (count of visible units of that item, e.g. 2 if you see two cans), unit (the container type: "bottle", "can", "box", "bag", "jar", "carton", "item" — use "item" when unsure), category (exactly one of: "Spices & Seasonings", "Grains & Pasta", "Canned Goods", "Baking", "Oils & Vinegars", "Condiments", "Snacks", "Beverages", "Dairy", "Meat & Seafood", "Produce", "Frozen", "Other"), and confidence (0-1, how sure you are this item is really there).
+
+Merge duplicates: the same product appearing in multiple photos is ONE item with summed quantity. Do not list the same product twice.
+Only include edible food/drink items — ignore shelves, containers, equipment, appliances, and non-food items. Items partially hidden behind others still count if identifiable. If you cannot identify an item, leave it out rather than guessing.
+
+Return ONLY a JSON object with an "items" array.`;
+
+    const parts: Array<any> = [{ text: prompt }];
+    for (const image of images) {
+      const base64Data = (image.data instanceof Buffer
+        ? image.data.toString('base64')
+        : image.data) as string;
+      parts.push({
+        inline_data: { mime_type: image.mimeType, data: base64Data },
+      });
+    }
+
+    const text = await this.generate(parts);
+
+    // Extract JSON from markdown code blocks if present
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/);
+    const jsonText = jsonMatch ? jsonMatch[1] : text;
+
+    const parsed = JSON.parse(jsonText);
+    const items = (parsed.items || []) as ScannedPantryItem[];
+    return items.filter((item) => item && typeof item.name === 'string' && item.name.trim());
   }
 
   private buildRecipePrompt(prompt: string, options?: RecipeGenerationOptions): string {
