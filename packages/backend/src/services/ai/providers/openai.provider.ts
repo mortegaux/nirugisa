@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import axios from 'axios';
 import { buildEnhancePrompts } from './enhance-prompts';
-import { AIGeneratedRecipe, AISubstitutionSuggestion } from '@nommable/shared';
+import { AIGeneratedRecipe, AISubstitutionSuggestion, ScannedPantryItem } from '@nommable/shared';
 import {
   IAIProvider,
   RecipeGenerationOptions,
@@ -297,6 +297,54 @@ ${rawText}`;
 
     const result = JSON.parse(content);
     return result.ingredients || [];
+  }
+
+  async scanPantryFromImages(images: ImageInput[], locationHint?: string): Promise<ScannedPantryItem[]> {
+    const systemPrompt = `You are a food recognition expert. Identify food and drink items visible in wide photos of pantry shelves, fridges, freezers, and other food storage. Always respond with valid JSON only.`;
+
+    const userPrompt = `These ${images.length} photo(s) show food storage${locationHint ? ` (taken in the ${locationHint})` : ''} — wide shots of shelves / fridge / freezer, not one item per photo. Identify every distinct edible food or drink item visible across all photos.
+
+For each item return: name (product name as printed on the label when readable, e.g. "Heinz Ketchup", "Whole Milk" — not generic "sauce"), quantity (count of visible units of that item, e.g. 2 if you see two cans), unit (the container type: "bottle", "can", "box", "bag", "jar", "carton", "item" — use "item" when unsure), category (exactly one of: "Spices & Seasonings", "Grains & Pasta", "Canned Goods", "Baking", "Oils & Vinegars", "Condiments", "Snacks", "Beverages", "Dairy", "Meat & Seafood", "Produce", "Frozen", "Other"), and confidence (0-1, how sure you are this item is really there).
+
+Merge duplicates: the same product appearing in multiple photos is ONE item with summed quantity. Do not list the same product twice.
+Only include edible food/drink items — ignore shelves, containers, equipment, appliances, and non-food items. Items partially hidden behind others still count if identifiable. If you cannot identify an item, leave it out rather than guessing.
+
+Return a JSON object with an "items" array.`;
+
+    const visionModel = this.model.includes('vision') || this.model.includes('4o')
+      ? this.model
+      : 'gpt-4o';
+
+    const imageParts = images.map((image) => {
+      const base64Data = image.data instanceof Buffer ? image.data.toString('base64') : image.data;
+      return {
+        type: 'image_url' as const,
+        image_url: { url: `data:${image.mimeType};base64,${base64Data}` },
+      };
+    });
+
+    const response = await this.client.chat.completions.create({
+      model: visionModel,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [{ type: 'text', text: userPrompt }, ...imageParts],
+        },
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens: 2048,
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from OpenAI Vision');
+    }
+
+    const result = JSON.parse(content);
+    const items = (result.items || []) as ScannedPantryItem[];
+    return items.filter((item) => item && typeof item.name === 'string' && item.name.trim());
   }
 
   private buildRecipePrompt(prompt: string, options?: RecipeGenerationOptions): string {

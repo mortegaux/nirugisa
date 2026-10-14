@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { buildEnhancePrompts } from './enhance-prompts';
-import { AIGeneratedRecipe, AISubstitutionSuggestion } from '@nommable/shared';
+import { AIGeneratedRecipe, AISubstitutionSuggestion, ScannedPantryItem } from '@nommable/shared';
 import {
   IAIProvider,
   RecipeGenerationOptions,
@@ -297,6 +297,54 @@ ${rawText}`;
 
     const result = JSON.parse(content.text);
     return result.ingredients || [];
+  }
+
+  async scanPantryFromImages(images: ImageInput[], locationHint?: string): Promise<ScannedPantryItem[]> {
+    const systemPrompt = `You are a food recognition expert. Identify food and drink items visible in wide photos of pantry shelves, fridges, freezers, and other food storage. Always respond with valid JSON only.`;
+
+    const userPrompt = `These ${images.length} photo(s) show food storage${locationHint ? ` (taken in the ${locationHint})` : ''} — wide shots of shelves / fridge / freezer, not one item per photo. Identify every distinct edible food or drink item visible across all photos.
+
+For each item return: name (product name as printed on the label when readable, e.g. "Heinz Ketchup", "Whole Milk" — not generic "sauce"), quantity (count of visible units of that item, e.g. 2 if you see two cans), unit (the container type: "bottle", "can", "box", "bag", "jar", "carton", "item" — use "item" when unsure), category (exactly one of: "Spices & Seasonings", "Grains & Pasta", "Canned Goods", "Baking", "Oils & Vinegars", "Condiments", "Snacks", "Beverages", "Dairy", "Meat & Seafood", "Produce", "Frozen", "Other"), and confidence (0-1, how sure you are this item is really there).
+
+Merge duplicates: the same product appearing in multiple photos is ONE item with summed quantity. Do not list the same product twice.
+Only include edible food/drink items — ignore shelves, containers, equipment, appliances, and non-food items. Items partially hidden behind others still count if identifiable. If you cannot identify an item, leave it out rather than guessing.
+
+Return a JSON object with an "items" array.`;
+
+    const validMediaTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const imageParts = images.map((image) => {
+      const base64Data = (image.data instanceof Buffer
+        ? image.data.toString('base64')
+        : image.data) as string;
+      const mediaType = validMediaTypes.includes(image.mimeType)
+        ? image.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
+        : 'image/jpeg';
+      return {
+        type: 'image' as const,
+        source: { type: 'base64' as const, media_type: mediaType, data: base64Data },
+      };
+    });
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: [...imageParts, { type: 'text' as const, text: userPrompt }],
+        },
+      ],
+    });
+
+    const content = response.content[0];
+    if (content.type !== 'text') {
+      throw new Error('Unexpected response type from Anthropic Vision');
+    }
+
+    const result = JSON.parse(content.text);
+    const items = (result.items || []) as ScannedPantryItem[];
+    return items.filter((item) => item && typeof item.name === 'string' && item.name.trim());
   }
 
   private buildRecipePrompt(prompt: string, options?: RecipeGenerationOptions): string {
