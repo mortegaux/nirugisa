@@ -2,9 +2,6 @@
 
 A self-hosted recipe management system with optional AI features powered by multiple providers (OpenAI, Anthropic, Google AI, Ollama).
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https%3A%2F%2Fgithub.com%2Fmortegaux%2Fnommable&envs=BETTER_AUTH_SECRET%2CENCRYPTION_KEY%2CDB_PATH&DB_PATHDefault=%2Fdata%2Fnommable.db&BETTER_AUTH_SECRETDesc=Session+signing+secret+%2832%2B+random+chars%29&ENCRYPTION_KEYDesc=Encryption+key+for+stored+API+keys+%2864+hex+chars+or+random+string%29)
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mortegaux/nommable)
-
 ## Screenshots
 
 | Recipes | Recipe Detail |
