@@ -19,6 +19,7 @@ import type {
   AdminResetPasswordResponse,
   UserDirectCreateDto,
   ScannedPantryItem,
+  PantryLocationInfo,
   UserDirectCreateResponse,
   UsernameSuggestionsResponse,
   UserRole,
@@ -392,6 +393,12 @@ export const pantryApi = {
   updateQuantity: (id: string, quantityChange: number) =>
     api.patch(`/pantry/${id}/quantity`, { quantityChange }),
   toggleLowStock: (id: string) => api.patch(`/pantry/${id}/toggle-low-stock`),
+  getLocations: () => api.get<PantryLocationInfo[]>('/pantry/locations'),
+  createLocation: (name: string) => api.post<PantryLocationInfo>('/pantry/locations', { name }),
+  updateLocation: (oldName: string, name: string) =>
+    api.put<{ success: boolean; name: string }>(`/pantry/locations/${encodeURIComponent(oldName)}`, { name }),
+  deleteLocation: (name: string, transferTo?: string) =>
+    api.delete<{ success: boolean }>(`/pantry/locations/${encodeURIComponent(name)}${transferTo ? `?transferTo=${encodeURIComponent(transferTo)}` : ''}`),
   /** AI vision scan of pantry/fridge photos. Returns candidates for review — nothing is added until the user confirms. */
   scanImages: (files: File[], location: string) => {
     const formData = new FormData();

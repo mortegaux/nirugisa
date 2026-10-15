@@ -94,6 +94,45 @@ export const pantryController = {
     }
   },
 
+  async getLocations(req: AuthRequest, res: Response) {
+    try {
+      const locations = await pantryService.getLocations(req.userId!);
+      res.json(locations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async createLocation(req: AuthRequest, res: Response) {
+    try {
+      const { name } = req.body ?? {};
+      const location = await pantryService.createLocation(req.userId!, name);
+      res.status(201).json(location);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  },
+
+  async updateLocation(req: AuthRequest, res: Response) {
+    try {
+      const { name } = req.body ?? {};
+      const result = await pantryService.updateLocation(req.userId!, req.params.name, name);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  },
+
+  async deleteLocation(req: AuthRequest, res: Response) {
+    try {
+      const transferTo = req.query.transferTo as string | undefined;
+      const result = await pantryService.deleteLocation(req.userId!, req.params.name, transferTo);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  },
+
   /**
    * AI vision scan of pantry/fridge photos.
    * Accepts up to 5 wide photos (multipart `files`) plus an optional

@@ -46,16 +46,19 @@ interface PantryScanModalProps {
   existingItems: PantryItem[];
   /** Called after items are added so the parent can refresh. */
   onAdded: () => void;
+  /** Available storage locations */
+  availableLocations?: string[];
 }
 
 function normalizeName(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
-export function PantryScanModal({ onClose, existingItems, onAdded }: PantryScanModalProps) {
+export function PantryScanModal({ onClose, existingItems, onAdded, availableLocations }: PantryScanModalProps) {
   const toast = useToastStore();
+  const locationOptions = availableLocations && availableLocations.length > 0 ? availableLocations : LOCATIONS;
   const [step, setStep] = useState<'capture' | 'review'>('capture');
-  const [location, setLocation] = useState('Pantry');
+  const [location, setLocation] = useState(locationOptions[0] || 'Pantry');
   const [files, setFiles] = useState<File[]>([]);
   const [scanning, setScanning] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -212,7 +215,7 @@ export function PantryScanModal({ onClose, existingItems, onAdded }: PantryScanM
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                {LOCATIONS.map((loc) => (
+                {locationOptions.map((loc) => (
                   <option key={loc} value={loc}>
                     {loc}
                   </option>
@@ -407,7 +410,7 @@ export function PantryScanModal({ onClose, existingItems, onAdded }: PantryScanM
                         aria-label="Location"
                         className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                       >
-                        {LOCATIONS.map((loc) => (
+                        {locationOptions.map((loc) => (
                           <option key={loc} value={loc}>
                             {loc}
                           </option>

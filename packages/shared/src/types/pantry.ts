@@ -73,3 +73,18 @@ export const PANTRY_LOCATIONS = [
   'Cabinet',
   'Other',
 ] as const;
+
+export interface PantryLocationInfo {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  itemCount: number;
+}
+
+export interface CreatePantryLocationDto {
+  name: string;
+}
+
+export interface UpdatePantryLocationDto {
+  name: string;
+}
