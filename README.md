@@ -6,11 +6,11 @@ A self-hosted recipe management system with optional AI features powered by mult
 
 | Recipes | Recipe Detail |
 |---|---|
-| ![Recipes page with recipe cards, search, and pantry suggestions](docs/screenshots/recipes.jpg) | ![Recipe detail page with photo, times, and ingredients](docs/screenshots/recipe-detail.jpg) |
+| ![Recipes page with recipe cards, search, and pantry suggestions](docs/screenshots/recipes.png) | ![Recipe detail page with photo, times, and ingredients](docs/screenshots/recipe-detail.png) |
 
 | Pantry | Meal Plans | Shopping Lists |
 |---|---|---|
-| ![Pantry page with expiry and low-stock alerts](docs/screenshots/pantry.png) | ![Meal plan week view with scheduled recipes](docs/screenshots/meal-plans.jpg) | ![Shopping list grouped by grocery aisle](docs/screenshots/shopping-lists.png) |
+| ![Pantry page with expiry and low-stock alerts](docs/screenshots/pantry.png) | ![Meal plan week view with scheduled recipes](docs/screenshots/meal-plans.png) | ![Shopping list grouped by grocery aisle](docs/screenshots/shopping-lists.png) |
 
 ## Features
 
