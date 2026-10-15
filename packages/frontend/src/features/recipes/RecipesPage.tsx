@@ -161,6 +161,15 @@ export default function RecipesPage() {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedDietaryTags, setSelectedDietaryTags] = useState<Set<string>>(new Set());
   const [selectedRecipes, setSelectedRecipes] = useState<Set<string>>(new Set());
+  /** Explicit bulk-select mode: checkboxes and the bulk action bar only
+   * exist while the user is deliberately doing bulk actions, so a stray
+   * checkbox click can't summon the bar out of nowhere. */
+  const [bulkSelectMode, setBulkSelectMode] = useState(false);
+
+  const exitBulkSelectMode = () => {
+    setBulkSelectMode(false);
+    setSelectedRecipes(new Set());
+  };
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [bulkEditTags, setBulkEditTags] = useState('');
@@ -298,7 +307,7 @@ export default function RecipesPage() {
 
     try {
       await recipeApi.bulkDelete(Array.from(selectedRecipes));
-      setSelectedRecipes(new Set());
+      exitBulkSelectMode();
       loadRecipes(1);
       toast.success(`Deleted ${count} recipe${count === 1 ? '' : 's'}.`);
     } catch (error) {
@@ -331,6 +340,7 @@ export default function RecipesPage() {
       setShowBulkEdit(false);
       setBulkEditTags('');
       setBulkEditCategories('');
+      setBulkSelectMode(false);
       loadRecipes(1);
     } catch (error) {
       console.error('Failed to update recipes:', error);
@@ -382,6 +392,20 @@ export default function RecipesPage() {
           <p className="text-muted-foreground mt-1">{total}{' '}delicious recipes</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() =>
+              bulkSelectMode ? exitBulkSelectMode() : setBulkSelectMode(true)
+            }
+            className={`rounded-lg border px-4 py-2 font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center gap-2 ${
+              bulkSelectMode
+                ? 'border-primary bg-primary/10 text-primary hover:bg-primary/15'
+                : 'border-border bg-background text-foreground hover:bg-accent'
+            }`}
+            aria-label={bulkSelectMode ? 'Exit bulk select mode' : 'Select recipes for bulk actions'}
+            aria-pressed={bulkSelectMode}
+          >
+            {bulkSelectMode ? 'Done' : 'Select'}
+          </button>
           <button
             onClick={() => void openAIGenerate()}
             className={`rounded-lg border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-accent shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center gap-2 ${!aiReady && !aiLoading ? aiNotConfiguredClass : ''}`}
@@ -504,7 +528,7 @@ export default function RecipesPage() {
               onChange={setSelectedDietaryTags}
             />
           )}
-          {recipes.length > 0 && (
+          {recipes.length > 0 && bulkSelectMode && (
             <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
@@ -939,19 +963,21 @@ export default function RecipesPage() {
                     : 'border-border hover:border-primary/30'
                 }`}
               >
-                {/* Selection Checkbox */}
-                <div className="absolute top-3 left-3 z-10">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      toggleRecipeSelection(recipe.id);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-5 h-5 rounded border-2 border-white bg-white/90 text-primary shadow-md focus:ring-2 focus:ring-primary cursor-pointer"
-                  />
-                </div>
+                {/* Selection Checkbox — only in bulk-select mode */}
+                {bulkSelectMode && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleRecipeSelection(recipe.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-5 h-5 rounded border-2 border-white bg-white/90 text-primary shadow-md focus:ring-2 focus:ring-primary cursor-pointer"
+                    />
+                  </div>
+                )}
 
                 <Link
                   to={`/recipes/${recipe.id}`}
@@ -1161,8 +1187,8 @@ export default function RecipesPage() {
         isLoading={isRefreshing}
       />
 
-      {/* Floating Bulk Action Bar */}
-      {selectedRecipes.size > 0 && (
+      {/* Floating Bulk Action Bar — only while doing bulk actions */}
+      {bulkSelectMode && selectedRecipes.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-primary/30 bg-card/95 backdrop-blur-sm shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
           <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1205,7 +1231,7 @@ export default function RecipesPage() {
         <AddToCollectionDialog
           recipeIds={Array.from(selectedRecipes)}
           onClose={() => setShowAddToCollection(false)}
-          onAdded={() => setSelectedRecipes(new Set())}
+          onAdded={() => exitBulkSelectMode()}
         />
       )}
     </div>
