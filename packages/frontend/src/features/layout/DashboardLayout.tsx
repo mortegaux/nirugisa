@@ -35,6 +35,7 @@ export default function DashboardLayout() {
   const { modal, aiAlertMessage, closeModal, dismissAiAlert } = useRecipeCreateStore();
 
   const navItems = [
+    { path: '/kitchen-today', label: 'Kitchen Today' },
     { path: '/recipes', label: 'Recipes' },
     { path: '/collections', label: 'Collections' },
     { path: '/meal-plans', label: 'Meal Plans' },
@@ -61,8 +62,16 @@ export default function DashboardLayout() {
       {/* Header */}
       <header className="border-b border-border bg-card shadow-sm">
         <div className="container mx-auto flex items-center justify-between gap-2 px-3 py-3 md:px-4 md:py-4">
-          <Link to="/recipes" className="flex min-w-0 items-center gap-2 text-xl font-bold text-primary md:gap-2.5 md:text-2xl" aria-label="Nommable home">
-            <img src="/logo.png" alt="Nommable logo" className="h-7 w-7 shrink-0 rounded-lg object-contain md:h-8 md:w-8" />
+          <Link
+            to="/kitchen-today"
+            className="flex min-w-0 items-center gap-2 text-xl font-bold text-primary md:gap-2.5 md:text-2xl"
+            aria-label="Nommable home"
+          >
+            <img
+              src="/logo.png"
+              alt="Nommable logo"
+              className="h-7 w-7 shrink-0 rounded-lg object-contain md:h-8 md:w-8"
+            />
             <span className="truncate">Nommable</span>
           </Link>
 
@@ -73,9 +82,7 @@ export default function DashboardLayout() {
                 key={item.path}
                 to={item.path}
                 className={`hover:text-primary transition-colors whitespace-nowrap ${
-                  isActive(item.path)
-                    ? 'font-semibold text-primary'
-                    : 'text-muted-foreground'
+                  isActive(item.path) ? 'font-semibold text-primary' : 'text-muted-foreground'
                 }`}
               >
                 {item.label}
@@ -97,9 +104,19 @@ export default function DashboardLayout() {
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 )}
               </svg>
             </button>
@@ -108,15 +125,17 @@ export default function DashboardLayout() {
 
         {/* Mobile nav dropdown */}
         {mobileMenuOpen && (
-          <nav className="md:hidden border-t border-border bg-card px-4 py-2" role="navigation" aria-label="Mobile navigation">
+          <nav
+            className="md:hidden border-t border-border bg-card px-4 py-2"
+            role="navigation"
+            aria-label="Mobile navigation"
+          >
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 className={`block py-3 px-2 rounded-lg hover:bg-accent transition-colors ${
-                  isActive(item.path)
-                    ? 'font-semibold text-primary'
-                    : 'text-muted-foreground'
+                  isActive(item.path) ? 'font-semibold text-primary' : 'text-muted-foreground'
                 }`}
               >
                 {item.label}
@@ -127,7 +146,11 @@ export default function DashboardLayout() {
       </header>
 
       {/* Main Content */}
-      <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto bg-background focus:outline-none">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 overflow-auto bg-background focus:outline-none"
+      >
         <div className="container mx-auto px-4 py-8">
           <Outlet />
         </div>
@@ -136,13 +159,10 @@ export default function DashboardLayout() {
       {/* Global recipe creation — openable from anywhere via NewRecipeMenu */}
       {modal === 'import' && <RecipeImportExport onClose={closeModal} />}
       {modal === 'ai' && <AIGenerateRecipeModal onClose={closeModal} />}
-      {aiAlertMessage && (
-        <AIConfigAlert onClose={dismissAiAlert} message={aiAlertMessage} />
-      )}
+      {aiAlertMessage && <AIConfigAlert onClose={dismissAiAlert} message={aiAlertMessage} />}
 
       {/* Global feedback widget — available on every page */}
       <FeedbackWidget />
     </div>
   );
 }
-

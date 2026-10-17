@@ -23,6 +23,7 @@ import AnalyticsPage from '@/features/analytics/AnalyticsPage';
 import BatchCookingPage from '@/features/batch-cooking/BatchCookingPage';
 import GamificationPage from '@/features/gamification/GamificationPage';
 import CollectionsPage from '@/features/collections/CollectionsPage';
+import KitchenTodayPage from '@/features/kitchen-today/KitchenTodayPage';
 import CollectionDetailPage from '@/features/collections/CollectionDetailPage';
 import NotFoundPage from '@/features/errors/NotFoundPage';
 import FeedbackInboxPage from '@/features/feedback/FeedbackInboxPage';
@@ -114,7 +115,8 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/recipes" replace />} />
+          <Route index element={<Navigate to="/kitchen-today" replace />} />
+          <Route path="kitchen-today" element={<KitchenTodayPage />} />
           <Route path="recipes" element={<RecipesPage />} />
           <Route path="recipes/new" element={<RecipeForm />} />
           <Route path="recipes/:id/edit" element={<RecipeEditPage />} />
@@ -131,7 +133,14 @@ function App() {
           <Route path="achievements" element={<GamificationPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/taxonomies" element={<TaxonomyManagement />} />
-          <Route path="admin/feedback" element={<AdminRoute><FeedbackInboxPage /></AdminRoute>} />
+          <Route
+            path="admin/feedback"
+            element={
+              <AdminRoute>
+                <FeedbackInboxPage />
+              </AdminRoute>
+            }
+          />
           {/* 404 - Must be last */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>
