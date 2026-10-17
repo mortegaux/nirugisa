@@ -34,6 +34,7 @@ function SectionCard({
   emptyHrefLabel,
   children,
   hasRows,
+  footer,
 }: {
   icon: typeof ChefHat;
   title: string;
@@ -45,6 +46,7 @@ function SectionCard({
   emptyHrefLabel: string;
   children: React.ReactNode;
   hasRows: boolean;
+  footer?: React.ReactNode;
 }) {
   return (
     <section className="bg-card rounded-lg border border-border p-6 shadow-sm">
@@ -74,6 +76,7 @@ function SectionCard({
           </Link>
         </p>
       )}
+      {footer}
     </section>
   );
 }
@@ -325,7 +328,7 @@ export default function KitchenTodayPage() {
           viewAllLabel="Batch cooking"
           emptyText="No batch-cooked leftovers still good."
           emptyHref="/batch-cooking"
-          emptyHrefLabel="Cook a batch"
+          emptyHrefLabel="View batch cooking"
           hasRows={summary.leftovers.length > 0}
         >
           <ul className="space-y-2">
@@ -362,6 +365,22 @@ export default function KitchenTodayPage() {
           emptyHref="/pantry"
           emptyHrefLabel="View pantry"
           hasRows={summary.lowStock.length > 0}
+          footer={
+            <p className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
+              {summary.activeShoppingLists.length > 0 ? (
+                <>
+                  {summary.activeShoppingLists.reduce((sum, list) => sum + list.uncheckedCount, 0)}{' '}
+                  items left on {summary.activeShoppingLists.length} shopping list
+                  {summary.activeShoppingLists.length === 1 ? '' : 's'}.{' '}
+                </>
+              ) : (
+                <>No active shopping lists. </>
+              )}
+              <Link to="/shopping-lists" className="font-medium text-primary hover:underline">
+                View shopping lists
+              </Link>
+            </p>
+          }
         >
           <ul className="space-y-2">
             {summary.lowStock.slice(0, MAX_ROWS).map((item) => (
@@ -373,16 +392,6 @@ export default function KitchenTodayPage() {
           {summary.lowStock.length > MAX_ROWS && (
             <p className="mt-3 text-sm text-muted-foreground">
               …and {summary.lowStock.length - MAX_ROWS} more low-stock items.
-            </p>
-          )}
-          {summary.activeShoppingLists.length > 0 && (
-            <p className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
-              {summary.activeShoppingLists.reduce((sum, list) => sum + list.uncheckedCount, 0)}{' '}
-              items left on {summary.activeShoppingLists.length} shopping list
-              {summary.activeShoppingLists.length === 1 ? '' : 's'}.{' '}
-              <Link to="/shopping-lists" className="font-medium text-primary hover:underline">
-                View shopping lists
-              </Link>
             </p>
           )}
         </SectionCard>
