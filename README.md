@@ -4,12 +4,12 @@ A self-hosted recipe management system with optional AI features powered by mult
 
 ## Screenshots
 
-| Recipes | Recipe Detail |
-|---|---|
+| Recipes                                                                                         | Recipe Detail                                                                                |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | ![Recipes page with recipe cards, search, and pantry suggestions](docs/screenshots/recipes.png) | ![Recipe detail page with photo, times, and ingredients](docs/screenshots/recipe-detail.png) |
 
-| Pantry | Meal Plans | Shopping Lists |
-|---|---|---|
+| Pantry                                                                       | Meal Plans                                                                     | Shopping Lists                                                                 |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
 | ![Pantry page with expiry and low-stock alerts](docs/screenshots/pantry.png) | ![Meal plan week view with scheduled recipes](docs/screenshots/meal-plans.png) | ![Shopping list grouped by grocery aisle](docs/screenshots/shopping-lists.png) |
 
 ## Features
@@ -34,6 +34,7 @@ A self-hosted recipe management system with optional AI features powered by mult
 ## Tech Stack
 
 **Backend:**
+
 - Node.js + TypeScript
 - Express.js
 - TypeORM + SQLite (better-sqlite3)
@@ -41,6 +42,7 @@ A self-hosted recipe management system with optional AI features powered by mult
 - Multiple AI SDK integrations
 
 **Frontend:**
+
 - React 18 + TypeScript
 - Vite
 - React Router
@@ -48,6 +50,7 @@ A self-hosted recipe management system with optional AI features powered by mult
 - Tailwind CSS
 
 **DevOps:**
+
 - Docker + Docker Compose (single container)
 - npm workspaces (monorepo)
 
@@ -61,28 +64,33 @@ A self-hosted recipe management system with optional AI features powered by mult
 ### Development Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone <repository-url>
    cd nommable
    ```
 
 2. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables:**
+
    ```bash
    cp packages/backend/.env.example packages/backend/.env
    # Edit packages/backend/.env with your configuration
    ```
 
 4. **Start the backend** (SQLite DB is created automatically on first run):
+
    ```bash
    npm run dev:backend
    ```
 
 5. **Start the frontend** (in a new terminal):
+
    ```bash
    npm run dev:frontend
    ```
@@ -196,12 +204,65 @@ The backend API is available at `http://localhost:3001/api` with the following e
 - **AI**: `/api/ai` - AI configuration, dynamic model listing (`/api/ai/models`), test connection, and ingredient substitution
 - **Meal Plans**: `/api/meal-plans` - Meal planning and management
 - **Shopping Lists**: `/api/shopping-lists` - Shopping list management
+- **Home Assistant**: `/api/home-assistant` - Read-only JSON summaries for automation (tonight's dinner, low stock, expiring items, active shopping lists). See [Home Assistant](#home-assistant) below.
+
+### Home Assistant
+
+Four read-only endpoints for automation consumers. They use the existing session auth (no separate API tokens yet — those are a planned follow-up in #34). To call them from Home Assistant, sign in to Nommable in a browser, copy the `better-auth.session_token` cookie value from devtools, and send it as a Bearer token:
+
+```yaml
+# configuration.yaml — one REST sensor per summary
+rest:
+  - resource: http://localhost:8992/api/home-assistant/tonights-dinner
+    headers:
+      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+    sensor:
+      - name: "Tonight's Dinner"
+        value_template: "{{ value_json.meals[0].recipeTitle if value_json.count > 0 else 'Nothing planned' }}"
+        json_attributes:
+          - meals
+          - count
+  - resource: http://localhost:8992/api/home-assistant/low-stock
+    headers:
+      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+    sensor:
+      - name: 'Low Stock Items'
+        value_template: '{{ value_json.count }}'
+        json_attributes:
+          - items
+  - resource: http://localhost:8992/api/home-assistant/expiring
+    headers:
+      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+    sensor:
+      - name: 'Expiring Items'
+        value_template: '{{ value_json.count }}'
+        json_attributes:
+          - items
+  - resource: http://localhost:8992/api/home-assistant/shopping-lists
+    headers:
+      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+    sensor:
+      - name: 'Active Shopping Lists'
+        value_template: '{{ value_json.totalUnchecked }}'
+        json_attributes:
+          - lists
+```
+
+Endpoints (`GET`, all require auth):
+
+- `/api/home-assistant/tonights-dinner` — today's dinner if one is planned, otherwise all of today's meals: `{ date, meals: [{ planId, planName, mealId, mealType, recipeId, recipeTitle, time, notes }], count }`
+- `/api/home-assistant/low-stock` — `{ items: [{ id, name, quantity, unit, category, location }], count }`
+- `/api/home-assistant/expiring?days=7` — items expiring within the window (default 7, clamped 1–30), soonest first: `{ windowDays, items: [{ id, name, quantity, unit, category, location, expirationDate, daysUntilExpiry }], count }`
+- `/api/home-assistant/shopping-lists` — lists with unchecked items: `{ lists: [{ id, name, uncheckedCount, totalCount, items: [{ name, quantity, unit, category }] }], count, totalUnchecked }`
+
+Derivation matches the Kitchen Today screen (same 7-day expiry window, same dinner-preferred rule, same local-calendar-day math). Session tokens expire — if a sensor starts returning 401, sign in again and refresh the token.
 
 ## Environment Variables
 
 See `packages/backend/.env.example` for all available configuration options.
 
 Key variables:
+
 - `BETTER_AUTH_SECRET`: Secret for Better Auth session signing (min 32 chars; `JWT_SECRET` accepted as legacy alias)
 - `ENCRYPTION_KEY`: 32-byte hex key for AES-256-GCM encryption of stored AI API keys and SMTP credentials at rest
 - `DB_PATH`: SQLite database file path (default: `/data/nommable.db` in Docker, `./nommable.db` locally)
@@ -215,6 +276,7 @@ Key variables:
 ## Data Persistence
 
 All persistent data lives on the `/data` volume:
+
 - `/data/nommable.db` — SQLite database (WAL mode)
 - `/data/uploads` — uploaded images and files
 

@@ -17,6 +17,7 @@ import taxonomyRoutes from './taxonomy.routes';
 import collectionRoutes from './collection.routes';
 import feedbackRoutes from './feedback.routes';
 import setupRoutes from './setup.routes';
+import homeAssistantRoutes from './home-assistant.routes';
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use('/gamification', gamificationRoutes);
 router.use('/taxonomies', taxonomyRoutes);
 router.use('/collections', collectionRoutes);
 router.use('/feedback', feedbackRoutes);
+router.use('/home-assistant', homeAssistantRoutes);
 
 export default router;
