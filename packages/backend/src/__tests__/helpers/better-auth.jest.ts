@@ -13,6 +13,63 @@ export function bearer() {
   return { id: 'bearer' };
 }
 
+/**
+ * Cookie emulation, mirroring real Better Auth (better-call) semantics:
+ * the session cookie `nommable.session_token` (cookiePrefix `nommable`)
+ * holds a SIGNED value — `encodeURIComponent(token + '.' + base64(HMAC-SHA256(secret, token)))`.
+ * A raw token presented as the cookie value is rejected by getSession, just
+ * like production. The app code under test only forwards headers/cookies;
+ * it never parses the value, so the mock's job is to be wire-faithful here.
+ */
+const SESSION_COOKIE_NAME = 'nommable.session_token';
+const SESSION_COOKIE_ATTRS = 'Path=/; HttpOnly; SameSite=Lax; Max-Age=604800';
+
+function getSecret(): string {
+  return process.env.BETTER_AUTH_SECRET || 'test-better-auth-secret';
+}
+
+function signCookieValue(token: string): string {
+  const sig = crypto.createHmac('sha256', getSecret()).update(token).digest('base64');
+  return encodeURIComponent(`${token}.${sig}`);
+}
+
+function unsignCookieValue(signed: string): string | null {
+  try {
+    const decoded = decodeURIComponent(signed);
+    const idx = decoded.lastIndexOf('.');
+    if (idx <= 0) return null;
+    const token = decoded.slice(0, idx);
+    const sig = decoded.slice(idx + 1);
+    const expected = crypto.createHmac('sha256', getSecret()).update(token).digest('base64');
+    if (sig.length !== expected.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    return token;
+  } catch {
+    return null;
+  }
+}
+
+function parseCookieHeader(cookieHeader: string | null | undefined): Map<string, string> {
+  const out = new Map<string, string>();
+  if (!cookieHeader) return out;
+  for (const part of cookieHeader.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    const name = part.slice(0, eq).trim();
+    const value = part.slice(eq + 1).trim();
+    if (name && !out.has(name)) out.set(name, value);
+  }
+  return out;
+}
+
+function sessionCookieFromHeaders(headers: Headers | undefined): string | null {
+  const cookies = parseCookieHeader(headers?.get?.('cookie') || undefined);
+  // Real Better Auth may prefix with `__Secure-` when secure cookies are on.
+  const signed = cookies.get(SESSION_COOKIE_NAME) ?? cookies.get(`__Secure-${SESSION_COOKIE_NAME}`);
+  if (!signed) return null;
+  return unsignCookieValue(signed);
+}
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.randomBytes(16).toString('hex');
   const derived = crypto.scryptSync(password, salt, 64).toString('hex');
@@ -32,11 +89,16 @@ export function betterAuth(options: { database: Database.Database }) {
   return {
     api: {
       async getSession({ headers }: { headers: Headers }) {
+        // Bearer token first (the SPA's pattern), then the signed session
+        // cookie (browser navigation / direct requests) — mirrors real
+        // Better Auth, which accepts either.
         const authHeader = headers?.get?.('authorization') || '';
-        if (!authHeader.toLowerCase().startsWith('bearer ')) {
-          return null;
+        let token: string | null = null;
+        if (authHeader.toLowerCase().startsWith('bearer ')) {
+          token = authHeader.slice(7).trim() || null;
+        } else {
+          token = sessionCookieFromHeaders(headers);
         }
-        const token = authHeader.slice(7).trim();
         if (!token) return null;
 
         const session = db
@@ -88,9 +150,11 @@ export function betterAuth(options: { database: Database.Database }) {
 
       async signInUsername({
         body,
+        returnHeaders,
       }: {
         body: { username: string; password: string };
         headers?: Headers;
+        returnHeaders?: boolean;
       }) {
         const user = db
           .prepare('SELECT * FROM "user" WHERE "username" = ? OR "email" = ? LIMIT 1')
@@ -120,14 +184,38 @@ export function betterAuth(options: { database: Database.Database }) {
            VALUES (?, ?, ?, ?, ?, ?)`
         ).run(crypto.randomUUID(), expiresAt, token, now, now, user.id);
 
+        // Real Better Auth returns `{ headers, response }` when
+        // `returnHeaders: true` is passed, with the signed session cookie in
+        // the Set-Cookie headers. Without it, only `{ token, user }` comes back.
+        if (returnHeaders) {
+          const headers = new Headers();
+          headers.append(
+            'set-cookie',
+            `${SESSION_COOKIE_NAME}=${signCookieValue(token)}; ${SESSION_COOKIE_ATTRS}`
+          );
+          return { headers, response: { token, user } };
+        }
         return { token, user };
       },
 
-      async signOut({ headers }: { headers: Headers }) {
+      async signOut({ headers, returnHeaders }: { headers: Headers; returnHeaders?: boolean }) {
         const authHeader = headers?.get?.('authorization') || '';
+        let token: string | null = null;
         if (authHeader.toLowerCase().startsWith('bearer ')) {
-          const token = authHeader.slice(7).trim();
+          token = authHeader.slice(7).trim() || null;
+        } else {
+          token = sessionCookieFromHeaders(headers);
+        }
+        if (token) {
           db.prepare('DELETE FROM "session" WHERE "token" = ?').run(token);
+        }
+        if (returnHeaders) {
+          const outHeaders = new Headers();
+          outHeaders.append(
+            'set-cookie',
+            `${SESSION_COOKIE_NAME}=; ${SESSION_COOKIE_ATTRS}; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`
+          );
+          return { headers: outHeaders, response: { success: true } };
         }
         return { success: true };
       },

@@ -100,12 +100,17 @@ export class SetupController {
       const taxonomyService = new TaxonomyService();
       await taxonomyService.seedForUser(adminUser.id);
 
-      // Sign in the new admin so the wizard can enter the dashboard immediately
+      // Sign in the new admin so the wizard can enter the dashboard immediately.
+      // `returnHeaders: true` so Better Auth returns the Set-Cookie headers
+      // for the signed session cookie (issue #41) — otherwise the cookie is
+      // dropped and browser (cookie-only) requests have no session.
       const signIn = await auth.api.signInUsername({
         body: { username, password },
         headers: toAuthHeaders(req),
+        returnHeaders: true,
       });
-      const accessToken = signIn.token;
+      const accessToken = signIn.response.token;
+      const setupSetCookie = signIn.headers?.getSetCookie?.();
 
       // 3. Configure SMTP settings (if not skipped and host is provided)
       if (smtp && !smtp.skipped && typeof smtp.host === 'string' && smtp.host.trim()) {
@@ -186,6 +191,11 @@ export class SetupController {
         AIService.clearCache();
       }
 
+      // Forward the Set-Cookie headers (signed session cookie) with the
+      // success response only — not on the error path.
+      if (setupSetCookie?.length) {
+        res.setHeader('set-cookie', setupSetCookie);
+      }
       res.status(201).json({
         message: 'Setup completed successfully',
         user: {

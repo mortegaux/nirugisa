@@ -208,14 +208,19 @@ The backend API is available at `http://localhost:3001/api` with the following e
 
 ### Home Assistant
 
-Four read-only endpoints for automation consumers. They use the existing session auth (no separate API tokens yet — those are a planned follow-up in #34). To call them from Home Assistant, sign in to Nommable in a browser, copy the `better-auth.session_token` cookie value from devtools, and send it as a Bearer token:
+Four read-only endpoints for automation consumers. They use the existing session auth (no separate API tokens yet — those are a planned follow-up in #34). Two ways to authenticate:
+
+- **Browser / same-origin requests:** sign in via the web UI. Login sets the signed `nommable.session_token` cookie, and same-origin requests (including direct navigation to the endpoint URLs) authenticate with it.
+- **Home Assistant / API clients:** send `Authorization: Bearer <session token>`, where the session token is the `token` from the `POST /api/auth/login` JSON response. Alternatively, send the signed cookie itself as a `Cookie: nommable.session_token=<value>` header (copy the value from browser devtools after signing in) — but note the cookie value is HMAC-signed and is **not** a Bearer token; sending it as `Authorization: Bearer` will fail.
 
 ```yaml
 # configuration.yaml — one REST sensor per summary
+# Bearer token = `token` from the POST /api/auth/login JSON response
 rest:
   - resource: http://localhost:8992/api/home-assistant/tonights-dinner
     headers:
-      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+      Authorization: 'Bearer <session token from login response>'
+      Authorization: 'Bearer <session token from login response>'
     sensor:
       - name: "Tonight's Dinner"
         value_template: "{{ value_json.meals[0].recipeTitle if value_json.count > 0 else 'Nothing planned' }}"
@@ -224,7 +229,7 @@ rest:
           - count
   - resource: http://localhost:8992/api/home-assistant/low-stock
     headers:
-      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+      Authorization: 'Bearer <session token from login response>'
     sensor:
       - name: 'Low Stock Items'
         value_template: '{{ value_json.count }}'
@@ -232,7 +237,7 @@ rest:
           - items
   - resource: http://localhost:8992/api/home-assistant/expiring
     headers:
-      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+      Authorization: 'Bearer <session token from login response>'
     sensor:
       - name: 'Expiring Items'
         value_template: '{{ value_json.count }}'
@@ -240,7 +245,7 @@ rest:
           - items
   - resource: http://localhost:8992/api/home-assistant/shopping-lists
     headers:
-      Authorization: 'Bearer YOUR_SESSION_TOKEN'
+      Authorization: 'Bearer <session token from login response>'
     sensor:
       - name: 'Active Shopping Lists'
         value_template: '{{ value_json.totalUnchecked }}'
