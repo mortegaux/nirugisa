@@ -6,7 +6,6 @@ import { toAuthHeaders } from '../middleware/auth';
 import { auth, getAuthDb, ensureAppUser } from '../../lib/auth';
 import { InvitationService } from '../../services/invitation/invitation.service';
 import { TaxonomyService } from '../../services/taxonomy/taxonomy.service';
-import { UserRole } from '@nommable/shared';
 
 function toUserJson(user: User) {
   return {
@@ -72,13 +71,22 @@ export class AuthController {
       await new TaxonomyService().seedForUser(signUp.user.id);
 
       // Sign the new user in to return a session token (matches old API shape)
+      // `returnHeaders: true` so Better Auth returns the Set-Cookie headers
+      // for the signed session cookie — without it the cookie is dropped and
+      // browser (cookie-only) requests have no session (issue #41).
       const signIn = await auth.api.signInUsername({
         body: { username, password },
         headers: toAuthHeaders(req),
+        returnHeaders: true,
       });
 
+      const setCookie = signIn.headers?.getSetCookie?.();
+      if (setCookie?.length) {
+        res.setHeader('set-cookie', setCookie);
+      }
+
       res.status(201).json({
-        token: signIn.token,
+        token: signIn.response.token,
         user: toUserJson(appUser),
       });
     } catch (error) {
@@ -93,32 +101,37 @@ export class AuthController {
       // Better Auth verifies the password (scrypt) and mints a session.
       // The bearer plugin returns the session token for the SPA's
       // `Authorization: Bearer` pattern.
+      // `returnHeaders: true` so Better Auth returns the Set-Cookie headers
+      // for the signed session cookie — without it the cookie is dropped and
+      // browser (cookie-only) requests have no session (issue #41).
       const signIn = await auth.api.signInUsername({
         body: { username, password },
         headers: toAuthHeaders(req),
+        returnHeaders: true,
       });
 
-      if (!signIn?.token || !signIn?.user) {
+      if (!signIn.response?.token || !signIn.response?.user) {
         throw new AppError(401, 'Invalid credentials');
       }
 
       const userRepo = AppDataSource.getRepository(User);
       const appUser = await userRepo.findOne({
-        where: { id: signIn.user.id },
+        where: { id: signIn.response.user.id },
       });
 
       if (!appUser) {
         throw new AppError(401, 'Invalid credentials');
       }
 
-      // Forward any Set-Cookie headers (defense in depth; SPA uses bearer)
-      const setCookie = (signIn as { headers?: Headers }).headers?.getSetCookie?.();
+      // Forward the Set-Cookie headers (signed session cookie) so the browser
+      // stores it — cookie-only requests (e.g. direct navigation) then work.
+      const setCookie = signIn.headers?.getSetCookie?.();
       if (setCookie?.length) {
         res.setHeader('set-cookie', setCookie);
       }
 
       res.json({
-        token: signIn.token,
+        token: signIn.response.token,
         user: toUserJson(appUser),
       });
     } catch (error) {
@@ -132,7 +145,16 @@ export class AuthController {
 
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      await auth.api.signOut({ headers: toAuthHeaders(req) });
+      // `returnHeaders: true` so the cookie-expiring Set-Cookie comes back
+      // and the browser clears the session cookie set at login.
+      const signOut = await auth.api.signOut({
+        headers: toAuthHeaders(req),
+        returnHeaders: true,
+      });
+      const setCookie = signOut.headers?.getSetCookie?.();
+      if (setCookie?.length) {
+        res.setHeader('set-cookie', setCookie);
+      }
       res.json({ message: 'Logged out successfully' });
     } catch (error) {
       next(error);
