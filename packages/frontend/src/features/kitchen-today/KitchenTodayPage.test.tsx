@@ -110,6 +110,70 @@ describe('KitchenTodayPage', () => {
     expect(screen.getByText(/Nothing flagged low stock/)).toBeInTheDocument();
   });
 
+  it('always shows a shopping-lists link in Low stock, even with nothing to show', async () => {
+    mockedPantryApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedMealPlanApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedBatchCookingApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedShoppingListApi.getAll.mockResolvedValue({ data: [] } as never);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen Today')).toBeInTheDocument();
+    });
+    // Issue #37: the link used to render only when an active shopping list
+    // existed, so the click-test found no restock link on an empty board.
+    const restockLink = screen.getByRole('link', { name: 'View shopping lists' });
+    expect(restockLink).toHaveAttribute('href', '/shopping-lists');
+    expect(screen.getByText(/No active shopping lists/)).toBeInTheDocument();
+  });
+
+  it('labels the leftovers empty-state link as a view action, not a create action', async () => {
+    mockedPantryApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedMealPlanApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedBatchCookingApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedShoppingListApi.getAll.mockResolvedValue({ data: [] } as never);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen Today')).toBeInTheDocument();
+    });
+    // Issue #38: "Cook a batch" implied starting a new batch cook but landed
+    // on the list page — batch creation is a modal on that page, not a route.
+    expect(screen.queryByText('Cook a batch')).not.toBeInTheDocument();
+    const viewLinks = screen.getAllByRole('link', { name: 'View batch cooking' });
+    expect(viewLinks.length).toBeGreaterThanOrEqual(2);
+    for (const link of viewLinks) {
+      expect(link).toHaveAttribute('href', '/batch-cooking');
+    }
+  });
+
+  it('points the Coming Up links at the meal-plan pages', async () => {
+    mockedPantryApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedMealPlanApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedBatchCookingApi.getAll.mockResolvedValue({ data: [] } as never);
+    mockedShoppingListApi.getAll.mockResolvedValue({ data: [] } as never);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kitchen Today')).toBeInTheDocument();
+    });
+    // Code-verified after the click-test could not reach these links
+    // (session expired before they were clicked).
+    const mealPlanLinks = screen.getAllByRole('link', { name: 'Meal plans' });
+    expect(mealPlanLinks.length).toBeGreaterThanOrEqual(2);
+    for (const link of mealPlanLinks) {
+      expect(link).toHaveAttribute('href', '/meal-plans');
+    }
+    const planMealLinks = screen.getAllByRole('link', { name: 'Plan a meal' });
+    expect(planMealLinks.length).toBeGreaterThanOrEqual(2);
+    for (const link of planMealLinks) {
+      expect(link).toHaveAttribute('href', '/meal-plans/new');
+    }
+  });
+
   it('shows a retry state when every data source fails', async () => {
     mockedPantryApi.getAll.mockRejectedValue(new Error('down'));
     mockedMealPlanApi.getAll.mockRejectedValue(new Error('down'));
